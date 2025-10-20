@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory - Inventra</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+    
+    <!-- MANAGER SIDEBAR -->
+    <aside class="fixed top-0 left-0 z-40 w-64 h-screen bg-white shadow-lg">
+        <div class="h-full px-3 py-4 overflow-y-auto">
+            <div class="flex items-center mb-5 px-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-clipboard-list text-white text-xl"></i>
+                </div>
+                <div class="ml-3">
+                    <h2 class="text-xl font-bold text-gray-800">Manager Panel</h2>
+                    <p class="text-xs text-gray-500">Inventory Control</p>
+                </div>
+            </div>
+
+            <div class="mb-5 p-3 bg-green-50 rounded-lg border border-green-100">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {{ current_user.username[0].upper() }}
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800">{{ current_user.username }}</p>
+                        <p class="text-xs text-green-600">Inventory Manager</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="space-y-2">
+                <p class="px-3 text-xs font-semibold text-gray-500 uppercase mb-2">Manager Menu</p>
+                <a href="{{ url_for('manager_dashboard') }}" class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-chart-line w-5"></i><span class="ml-3">Dashboard</span>
+                </a>
+                <a href="{{ url_for('manage_products') }}" class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-box w-5"></i><span class="ml-3">Products</span>
+                </a>
+                <a href="{{ url_for('manage_categories') }}" class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-tags w-5"></i><span class="ml-3">Categories</span>
+                </a>
+                <a href="{{ url_for('manage_inventory') }}" class="nav-item active flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-clipboard-list w-5"></i><span class="ml-3">Inventory</span>
+                </a>
+                <a href="{{ url_for('manage_purchase_orders') }}" class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-shopping-cart w-5"></i>
+                    <span class="ml-3">Purchase Orders</span>
+                </a>
+
+                <a href="{{ url_for('manage_sup') }}"
+                    class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-truck w-5"></i>
+                    <span class="ml-3">Suppliers</span>
+                </a>
+                
+                <a href="{{ url_for('manage_reports') }}"  class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-chart-bar w-5"></i>
+                    <span class="ml-3">Reports</span>
+                </a>
+                <hr class="my-3 border-gray-200">
+                <a href="{{ url_for('logout') }}" class="nav-item flex items-center px-3 py-2.5 text-red-600 rounded-lg hover:bg-red-50">
+                    <i class="fas fa-sign-out-alt w-5"></i><span class="ml-3">Logout</span>
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="ml-64">
+        <header class="bg-white shadow-sm sticky top-0 z-30">
+            <div class="flex items-center justify-between px-6 py-4">
+                <h1 class="text-xl font-semibold text-gray-800">Inventory Management</h1>
+                <div class="flex items-center space-x-4">
+                    <button class="relative text-gray-600 hover:text-gray-800">
+                        <i class="fas fa-bell text-xl"></i>
+                        {% if low_stock_count > 0 %}
+                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{{ low_stock_count }}</span>
+                        {% endif %}
+                    </button>
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                        {{ current_user.username[0].upper() }}
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="p-6">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-boxes text-blue-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-sm">Total Products</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ products|length }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-sm">Low Stock Items</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ low_stock_count }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-dollar-sign text-green-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-sm">Total Stock Value</p>
+                            <p class="text-2xl font-bold text-gray-900">KES {{ "{:,.0f}".format(total_stock_value) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-exchange-alt text-purple-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-sm">Recent Movements</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ stock_movements|length }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Stock Table -->
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-800">Current Stock Levels</h3>
+                        <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center">
+                            <i class="fas fa-file-export mr-2"></i> Export Report
+                        </button>
+                    </div>
+                </div>
+
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Current Stock</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reorder Level</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock Value</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for product in products %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                        <i class="fas fa-box text-blue-600"></i>
+                                    </div>
+                                    <div class="font-medium text-gray-900">{{ product.name }}</div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">{{ product.sku }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="font-medium text-gray-900">{{ product.quantity }}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ product.reorder_level }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if product.quantity == 0 %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Out of Stock</span>
+                                {% elif product.quantity <= product.reorder_level %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Low Stock</span>
+                                {% else %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">In Stock</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                                KES {{ "%.2f"|format(product.cost_price * product.quantity) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Recent Stock Movements -->
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                    <h3 class="text-lg font-semibold text-gray-800">Recent Stock Movements</h3>
+                </div>
+
+                <div class="divide-y divide-gray-200">
+                    {% for movement in stock_movements %}
+                    <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center 
+                                {% if movement.movement_type == 'in' %}bg-green-100 text-green-600
+                                {% else %}bg-red-100 text-red-600{% endif %}">
+                                <i class="fas fa-{% if movement.movement_type == 'in' %}plus{% else %}minus{% endif %}"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">{{ movement.product.name }}</p>
+                                <p class="text-sm text-gray-500">
+                                    {{ movement.movement_type|title }} • {{ movement.quantity }} units • {{ movement.reason }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-medium text-gray-900">{{ movement.timestamp.strftime('%b %d, %Y %I:%M %p') }}</p>
+                            <p class="text-sm text-gray-500">By {{ movement.user.username }}</p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="px-6 py-8 text-center text-gray-500">
+                        <i class="fas fa-exchange-alt text-4xl mb-3 text-gray-300"></i>
+                        <p>No stock movements recorded yet</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

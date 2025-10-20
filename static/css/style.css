@@ -1,0 +1,56 @@
+/* body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #8EE4AF, #379683);
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  background: white;
+  border-radius: 10px;
+  padding: 30px;
+  width: 350px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+}
+
+.tab-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.tab-buttons button {
+  width: 48%;
+  padding: 10px;
+  border: none;
+  cursor: pointer;
+  background: #edf5e1;
+  font-weight: bold;
+  border-radius: 5px;
+}
+
+.tab-buttons button.active {
+  background: #5cdb95;
+  color: white;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+button[type="submit"] {
+  width: 100%;
+  padding: 10px;
+  background: #5cdb95;
+  border: none;
+  color: white;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+} */

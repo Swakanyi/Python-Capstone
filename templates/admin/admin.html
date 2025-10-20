@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Inventra</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        .nav-item:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid #10b981;
+        }
+
+        .nav-item.active {
+            background: rgba(16, 185, 129, 0.15);
+            border-left: 4px solid #10b981;
+            font-weight: 600;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .custom-notification {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .fa-spin {
+            animation: fa-spin 1s infinite linear;
+        }
+
+        @keyframes fa-spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        /* Reports Modal Styles */
+.report-tab.active {
+    border-bottom-color: #3b82f6;
+    color: #2563eb;
+}
+
+.report-content {
+    display: none;
+}
+
+.report-content.active {
+    display: block;
+}
+
+#reportsModal {
+    transition: all 0.3s ease;
+}
+    </style>
+</head>
+
+<body class="bg-gray-100">
+
+    <!-- ADMIN SIDEBAR -->
+    <aside class="fixed top-0 left-0 z-40 w-64 h-screen bg-white shadow-lg">
+        <div class="h-full px-3 py-4 overflow-y-auto">
+
+            <!-- Logo -->
+            <div class="flex items-center mb-5 px-3">
+                <div
+                    class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-shield-alt text-white text-xl"></i>
+                </div>
+                <div class="ml-3">
+                    <h2 class="text-xl font-bold text-gray-800">Admin Panel</h2>
+                    <p class="text-xs text-gray-500">System Control</p>
+                </div>
+            </div>
+
+            <!-- User Info -->
+            <div class="mb-5 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                <div class="flex items-center space-x-3">
+                    <div
+                        class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {{ current_user.username[0].upper() }}
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800">{{ current_user.username }}</p>
+                        <p class="text-xs text-blue-600">Administrator</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Navigation -->
+            <nav class="space-y-2">
+                <p class="px-3 text-xs font-semibold text-gray-500 uppercase mb-2">Admin Menu</p>
+
+                <a href="#" onclick="showSection('dashboard')"
+                    class="nav-item active flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-chart-line w-5"></i>
+                    <span class="ml-3">Dashboard</span>
+                </a>
+
+                <a href="#" onclick="showSection('users')"
+                    class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-users-cog w-5"></i>
+                    <span class="ml-3">Manage Users</span>
+                </a>
+
+                <a href="#" onclick="showSection('suppliers')"
+                    class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-truck w-5"></i>
+                    <span class="ml-3">Suppliers</span>
+                </a>
+
+                <a href="#" onclick="openReportsModal()" class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+    <i class="fas fa-chart-bar w-5"></i>
+    <span class="ml-3">Reports</span>
+</a>
+
+                <a href="#" onclick="showSection('settings')"
+                    class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-cog w-5"></i>
+                    <span class="ml-3">Settings</span>
+                </a>
+
+                <hr class="my-3 border-gray-200">
+
+                <a href="{{ url_for('logout') }}"
+                    class="nav-item flex items-center px-3 py-2.5 text-red-600 rounded-lg hover:bg-red-50">
+                    <i class="fas fa-sign-out-alt w-5"></i>
+                    <span class="ml-3">Logout</span>
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="ml-64">
+
+        <!-- Top Header -->
+        <header class="bg-white shadow-sm sticky top-0 z-30">
+            <div class="flex items-center justify-between px-6 py-4">
+                <h1 id="pageTitle" class="text-xl font-semibold text-gray-800">Dashboard</h1>
+
+                <div class="flex items-center space-x-4">
+                    <button class="relative text-gray-600 hover:text-gray-800">
+                        <i class="fas fa-bell text-xl"></i>
+                        <span
+                            class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">3</span>
+                    </button>
+                    <div
+                        class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                        {{ current_user.username[0].upper() }}
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- PAGE CONTENT -->
+        <main class="p-6">
+
+            <!-- DASHBOARD SECTION -->
+            <div id="dashboard-section" class="content-section active">
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white mb-6">
+                    <h2 class="text-2xl font-bold mb-2">Welcome back, {{ current_user.username }}! 👋</h2>
+                    <p class="text-blue-100">System Administration Dashboard</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="fas fa-users text-blue-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-gray-500 text-sm mb-1">Total Users</h3>
+                        <p class="text-3xl font-bold text-gray-900">{{ total_users }}</p>
+                        <p class="text-xs text-gray-500 mt-1">All system users</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition">
+                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="fas fa-truck text-orange-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-gray-500 text-sm mb-1">Active Suppliers</h3>
+                        <p class="text-3xl font-bold text-gray-900">{{ active_suppliers_count }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Registered suppliers</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="fas fa-shield-alt text-purple-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-gray-500 text-sm mb-1">Admin Users</h3>
+                        <p class="text-3xl font-bold text-gray-900">{{ admin_users_count }}</p>
+                        <p class="text-xs text-gray-500 mt-1">System administrators</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-gray-500 text-sm mb-1">System Status</h3>
+                        <p class="text-3xl font-bold text-gray-900">Online</p>
+                        <p class="text-xs text-gray-500 mt-1">All systems operational</p>
+                    </div>
+                </div>
+
+                <!-- Additional Dashboard Content -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    <!-- User Roles Overview -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">User Roles Overview</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                        <i class="fas fa-shield-alt text-purple-600"></i>
+                                    </div>
+                                    <span class="text-gray-700">Administrators</span>
+                                </div>
+                                <span class="font-bold text-purple-600">{{ user_roles.admins }}</span>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                        <i class="fas fa-user-tie text-blue-600"></i>
+                                    </div>
+                                    <span class="text-gray-700">Managers</span>
+                                </div>
+                                <span class="font-bold text-blue-600">{{ user_roles.managers }}</span>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                        <i class="fas fa-cash-register text-green-600"></i>
+                                    </div>
+                                    <span class="text-gray-700">Cashiers</span>
+                                </div>
+                                <span class="font-bold text-green-600">{{ user_roles.cashiers }}</span>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                                        <i class="fas fa-truck text-orange-600"></i>
+                                    </div>
+                                    <span class="text-gray-700">Suppliers</span>
+                                </div>
+                                <span class="font-bold text-orange-600">{{ user_roles.suppliers }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Alerts -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">System Alerts</h3>
+                        <div class="space-y-3">
+                            {% if inactive_users_count > 0 %}
+                            <div
+                                class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                                <div class="flex items-center">
+                                    <i class="fas fa-exclamation-triangle text-yellow-600 mr-3"></i>
+                                    <div>
+                                        <p class="font-medium text-yellow-800">Inactive Users</p>
+                                        <p class="text-sm text-yellow-600">{{ inactive_users_count }} accounts disabled
+                                        </p>
+                                    </div>
+                                </div>
+                                <button onclick="showSection('users')" class="text-yellow-600 hover:text-yellow-800">
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
+                            {% endif %}
+
+                            <div
+                                class="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                <div class="flex items-center">
+                                    <i class="fas fa-database text-blue-600 mr-3"></i>
+                                    <div>
+                                        <p class="font-medium text-blue-800">System Backup</p>
+                                        <p class="text-sm text-blue-600">Last backup: 2 hours ago</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                                <div class="flex items-center">
+                                    <i class="fas fa-check-circle text-green-600 mr-3"></i>
+                                    <div>
+                                        <p class="font-medium text-green-800">System Health</p>
+                                        <p class="text-sm text-green-600">All services running normally</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MANAGE USERS SECTION -->
+            <div id="users-section" class="content-section">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Manage Users</h2>
+                        <p class="text-gray-600">Add, edit, or remove system users</p>
+                    </div>
+                    <button onclick="openUserModal()"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-plus mr-2"></i> Add New User
+                    </button>
+                </div>
+
+                <!-- Users Table -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for user in users %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div
+                                            class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold mr-3">
+                                            {{ user.username[0].upper() }}
+                                        </div>
+                                        <div class="font-medium text-gray-900">{{ user.username }}</div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-gray-600">{{ user.email }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                                        {% if user.role == 'admin' %}bg-purple-100 text-purple-800
+                                        {% elif user.role == 'manager' %}bg-blue-100 text-blue-800
+                                        {% elif user.role == 'cashier' %}bg-green-100 text-green-800
+                                        {% else %}bg-orange-100 text-orange-800{% endif %}">
+                                        {{ user.role|title }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                                        {% if user.is_active %}bg-green-100 text-green-800
+                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                        {{ 'Active' if user.is_active else 'Inactive' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <!-- FIXED: Simplified button classes -->
+                                    {% if user.is_active %}
+                                    <button onclick="toggleUser('{{ user.id }}')"
+                                        class="text-red-600 hover:text-red-800 mr-3" title="Deactivate">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                    {% else %}
+                                    <button onclick="toggleUser('{{ user.id }}')"
+                                        class="text-green-600 hover:text-green-800 mr-3" title="Activate">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    {% endif %}
+
+                                    <button onclick="editUser('{{ user.id }}')"
+                                        class="text-blue-600 hover:text-blue-800 mr-3">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+
+                                    {% if user.id != current_user.id %}
+                                    <button onclick="deleteUser('{{ user.id }}')"
+                                        class="text-red-600 hover:text-red-800">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MANAGE SUPPLIERS SECTION -->
+            <div id="suppliers-section" class="content-section">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Manage Suppliers</h2>
+                        <p class="text-gray-600">Add, edit, or remove suppliers</p>
+                    </div>
+                    <button onclick="openSupplierModal()"
+                        class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-plus mr-2"></i> Add New Supplier
+                    </button>
+                </div>
+
+                <!-- Suppliers Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for supplier in suppliers %}
+                    <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-truck text-orange-600 text-xl"></i>
+                            </div>
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                                {% if supplier.is_active %}bg-green-100 text-green-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ 'Active' if supplier.is_active else 'Inactive' }}
+                            </span>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">{{ supplier.name }}</h3>
+                        <div class="space-y-2 text-sm text-gray-600 mb-4">
+                            <p><i class="fas fa-user w-4"></i> {{ supplier.contact_person or 'N/A' }}</p>
+                            <p><i class="fas fa-envelope w-4"></i> {{ supplier.email }}</p>
+                            <p><i class="fas fa-phone w-4"></i> {{ supplier.phone or 'N/A' }}</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="editSupplier('{{ supplier.id }}')"
+                                class="flex-1 bg-blue-50 text-blue-600 px-3 py-2 rounded-lg hover:bg-blue-100 transition">
+                                <i class="fas fa-edit mr-1"></i> Edit
+                            </button>
+                            <button onclick="deleteSupplier('{{ supplier.id }}', '{{ supplier.name }}')"
+                                class="flex-1 bg-red-50 text-red-600 px-3 py-2 rounded-lg hover:bg-red-100 transition">
+                                <i class="fas fa-trash mr-1"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- REPORTS SECTION -->
+            <div id="reports-section" class="content-section">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">System Reports</h2>
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <p class="text-gray-600">Reports functionality coming soon...</p>
+                </div>
+            </div>
+
+            <!-- SETTINGS SECTION -->
+            <div id="settings-section" class="content-section">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">System Settings</h2>
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <p class="text-gray-600">Settings functionality coming soon...</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- USER MODAL -->
+    <div id="userModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
+            <div class="flex items-center justify-between p-6 border-b">
+                <h3 class="text-xl font-bold text-gray-900">Add New User</h3>
+                <button onclick="closeUserModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form class="p-6 space-y-4" onsubmit="addUser(event)">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                    <input type="text" name="username"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter username" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" name="email"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter email" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                    <select name="role"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required>
+                        <option value="admin">Admin</option>
+                        <option value="manager">Manager</option>
+                        <option value="cashier">Cashier</option>
+                        <option value="supplier">Supplier</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" name="password"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter password" required>
+                </div>
+                <div class="flex space-x-3 pt-4">
+                    <button type="button" onclick="closeUserModal()"
+                        class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        Save User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SUPPLIER MODAL -->
+    <div id="supplierModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
+            <div class="flex items-center justify-between p-6 border-b">
+                <h3 class="text-xl font-bold text-gray-900">Add New Supplier</h3>
+                <button onclick="closeSupplierModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form class="p-6 space-y-4" onsubmit="addSupplier(event)">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+                    <input type="text" name="name"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Enter company name" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Contact Person</label>
+                    <input type="text" name="contact_person"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Enter contact name">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" name="email"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Enter email" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <input type="tel" name="phone"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Enter phone">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                    <textarea name="address"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        rows="2" placeholder="Enter address"></textarea>
+                </div>
+                <div class="flex space-x-3 pt-4">
+                    <button type="button" onclick="closeSupplierModal()"
+                        class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="flex-1 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700">
+                        Save Supplier
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- REPORTS MODAL -->
+<div id="reportsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                <div>
+                    <h3 class="text-2xl font-bold">Reports & Analytics</h3>
+                    <p class="text-blue-100">Comprehensive business insights and performance metrics</p>
+                </div>
+                <button onclick="closeReportsModal()" class="text-white hover:text-blue-200 text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6 overflow-y-auto max-h-[70vh]">
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Today's Revenue</p>
+                                <p class="text-xl font-bold text-green-600" id="todayRevenue">$0.00</p>
+                            </div>
+                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-dollar-sign text-green-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Today's Sales</p>
+                                <p class="text-xl font-bold text-blue-600" id="todaySales">0</p>
+                            </div>
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-shopping-cart text-blue-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Low Stock Items</p>
+                                <p class="text-xl font-bold text-orange-600" id="lowStockCount">0</p>
+                            </div>
+                            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-exclamation-triangle text-orange-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Active Users</p>
+                                <p class="text-xl font-bold text-purple-600" id="activeUsersCount">0</p>
+                            </div>
+                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-users text-purple-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Tabs -->
+                <div class="mb-6">
+                    <div class="border-b border-gray-200">
+                        <nav class="flex space-x-8">
+                            <button onclick="showReportTab('sales')" id="sales-tab" class="report-tab active py-2 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600">
+                                Sales Reports
+                            </button>
+                            <button onclick="showReportTab('inventory')" id="inventory-tab" class="report-tab py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700">
+                                Inventory Reports
+                            </button>
+                            <button onclick="showReportTab('financial')" id="financial-tab" class="report-tab py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700">
+                                Financial Reports
+                            </button>
+                            <button onclick="showReportTab('users')" id="users-tab" class="report-tab py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700">
+                                User Reports
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Report Content -->
+                <div id="sales-report" class="report-content active">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Sales Chart -->
+                        <div class="bg-white rounded-lg border border-gray-200 p-4">
+                            <h4 class="text-lg font-semibold text-gray-800 mb-4">Sales Trend (Last 7 Days)</h4>
+                            <canvas id="salesChart" height="250"></canvas>
+                        </div>
+                        
+                        <!-- Top Products -->
+                        <div class="bg-white rounded-lg border border-gray-200 p-4">
+                            <h4 class="text-lg font-semibold text-gray-800 mb-4">Top Selling Products</h4>
+                            <div class="space-y-3" id="topProductsList">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="inventory-report" class="report-content hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Low Stock Alert -->
+                        <div class="bg-white rounded-lg border border-gray-200 p-4">
+                            <h4 class="text-lg font-semibold text-gray-800 mb-4">Low Stock Alerts</h4>
+                            <div class="space-y-3" id="lowStockList">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <!-- Stock Value -->
+                        <div class="bg-white rounded-lg border border-gray-200 p-4">
+                            <h4 class="text-lg font-semibold text-gray-800 mb-4">Inventory Valuation</h4>
+                            <div class="text-center py-8">
+                                <p class="text-3xl font-bold text-green-600" id="totalInventoryValue">$0.00</p>
+                                <p class="text-gray-600 mt-2">Total Stock Value</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="financial-report" class="report-content hidden">
+                    <div class="bg-white rounded-lg border border-gray-200 p-4">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Financial Summary</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                                <p class="text-sm text-gray-600">Gross Revenue</p>
+                                <p class="text-xl font-bold text-green-600" id="grossRevenue">$0.00</p>
+                            </div>
+                            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                                <p class="text-sm text-gray-600">Net Profit</p>
+                                <p class="text-xl font-bold text-blue-600" id="netProfit">$0.00</p>
+                            </div>
+                            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                                <p class="text-sm text-gray-600">Profit Margin</p>
+                                <p class="text-xl font-bold text-purple-600" id="profitMargin">0%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="users-report" class="report-content hidden">
+                    <div class="bg-white rounded-lg border border-gray-200 p-4">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">User Activity</h4>
+                        <div class="space-y-3" id="userActivityList">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex justify-between items-center p-4 border-t bg-gray-50">
+                <div class="text-sm text-gray-600">
+                    Last updated: <span id="lastUpdated">Just now</span>
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="exportReport('pdf')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center">
+                        <i class="fas fa-file-pdf mr-2"></i> Export PDF
+                    </button>
+                    <button onclick="exportReport('excel')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center">
+                        <i class="fas fa-file-excel mr-2"></i> Export Excel
+                    </button>
+                    <button onclick="refreshReports()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
+                        <i class="fas fa-sync-alt mr-2"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // Section Switching
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(function (section) {
+                section.classList.remove('active');
+            });
+
+            // Show selected section
+            document.getElementById(sectionName + '-section').classList.add('active');
+
+            // Update active nav item
+            document.querySelectorAll('.nav-item').forEach(function (item) {
+                item.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+
+            // Update page title
+            const titles = {
+                'dashboard': 'Dashboard',
+                'users': 'Manage Users',
+                'suppliers': 'Manage Suppliers',
+                'reports': 'Reports',
+                'settings': 'Settings'
+            };
+            document.getElementById('pageTitle').textContent = titles[sectionName];
+        }
+
+        // User Modal Functions
+        function openUserModal() {
+            document.getElementById('userModal').classList.remove('hidden');
+        }
+
+        function closeUserModal() {
+            document.getElementById('userModal').classList.add('hidden');
+            // Reset form
+            document.querySelector('#userModal form').reset();
+        }
+
+        // Supplier Modal Functions
+        function openSupplierModal() {
+            document.getElementById('supplierModal').classList.remove('hidden');
+        }
+
+        function closeSupplierModal() {
+            document.getElementById('supplierModal').classList.add('hidden');
+            // Reset form
+            document.querySelector('#supplierModal form').reset();
+        }
+
+        // ====================
+        // USER MANAGEMENT FUNCTIONS
+        // ====================
+
+        async function addUser(event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const submitButton = event.target.querySelector('button[type="submit"]');
+
+            // Show loading state
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creating...';
+
+            try {
+                const response = await fetch('/admin/users/add', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification('User created successfully!', 'success');
+                    closeUserModal();
+                    // Reload to show new user
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Error creating user: ' + error, 'error');
+            } finally {
+                // Reset button state
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Save User';
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+
+            try {
+                const response = await fetch(`/admin/users/delete/${userId}`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification('User deleted successfully!', 'success');
+                    // Reload to reflect changes
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Error deleting user: ' + error, 'error');
+            }
+        }
+
+        async function toggleUser(userId) {
+            try {
+                const response = await fetch(`/admin/users/toggle/${userId}`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    // Reload to reflect changes
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Error updating user: ' + error, 'error');
+            }
+        }
+
+        function editUser(userId) {
+            // For now, show a simple edit modal
+            // In a real app, you'd fetch user data and populate a form
+            const newRole = prompt('Enter new role (admin/manager/cashier/supplier):');
+            if (newRole && ['admin', 'manager', 'cashier', 'supplier'].includes(newRole.toLowerCase())) {
+                updateUserRole(userId, newRole.toLowerCase());
+            } else if (newRole) {
+                showNotification('Invalid role. Must be: admin, manager, cashier, or supplier', 'error');
+            }
+        }
+
+        async function updateUserRole(userId, newRole) {
+            try {
+                const formData = new FormData();
+                formData.append('role', newRole);
+
+                const response = await fetch(`/admin/users/edit/${userId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification('User role updated successfully!', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Error updating user: ' + error, 'error');
+            }
+        }
+
+        // ====================
+        // SUPPLIER MANAGEMENT FUNCTIONS
+        // ====================
+
+        async function addSupplier(event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const submitButton = event.target.querySelector('button[type="submit"]');
+
+            // Show loading state
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creating...';
+
+            try {
+                const response = await fetch('/admin/suppliers/add', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification('Supplier added successfully!', 'success');
+                    closeSupplierModal();
+                    // Reload to show new supplier
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Error adding supplier: ' + error, 'error');
+            } finally {
+                // Reset button state
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Save Supplier';
+            }
+        }
+
+        async function deleteSupplier(supplierId, supplierName) {
+            try {
+                // First, get supplier details to show product count
+                const detailsResponse = await fetch(`/admin/suppliers/get/${supplierId}`);
+                const detailsResult = await detailsResponse.json();
+
+                if (detailsResult.success) {
+                    const productCount = detailsResult.supplier.products_count || 0;
+                    const message = `Are you sure you want to delete supplier "${supplierName}" and ${productCount} associated products? This action cannot be undone.`;
+
+                    if (!confirm(message)) return;
+
+                    // Proceed with deletion
+                    const response = await fetch(`/admin/suppliers/delete/${supplierId}`, {
+                        method: 'POST'
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showNotification(result.message, 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showNotification(result.message, 'error');
+                    }
+                }
+            } catch (error) {
+                showNotification('Error deleting supplier: ' + error, 'error');
+            }
+        }
+
+        async function toggleSupplier(supplierId) {
+            try {
+                const response = await fetch(`/admin/suppliers/toggle/${supplierId}`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    // Reload to reflect changes
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Error updating supplier: ' + error, 'error');
+            }
+        }
+
+        // REPLACE ONLY THESE FUNCTIONS - keep all your other supplier functions
+
+        // COMPLETELY REPLACE THESE EDIT FUNCTIONS:
+
+        async function editSupplier(supplierId) {
+            try {
+                console.log('Editing supplier:', supplierId); // Debug log
+
+                // Fetch supplier data from the server
+                const response = await fetch(`/admin/suppliers/get/${supplierId}`);
+                const result = await response.json();
+
+                console.log('Supplier data:', result); // Debug log
+
+                if (result.success) {
+                    openEditSupplierModal(result.supplier);
+                } else {
+                    showNotification('Error fetching supplier data: ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error in editSupplier:', error); // Debug log
+                showNotification('Error: ' + error, 'error');
+            }
+        }
+
+        function openEditSupplierModal(supplier) {
+            console.log('Opening modal for supplier:', supplier); // Debug log
+
+            // Create or update the edit modal
+            let editModal = document.getElementById('editSupplierModal');
+
+            if (!editModal) {
+                console.log('Creating new modal'); // Debug log
+                // Create the modal if it doesn't exist
+                editModal = document.createElement('div');
+                editModal.id = 'editSupplierModal';
+                editModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center';
+                editModal.innerHTML = `
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
+                <div class="flex items-center justify-between p-6 border-b">
+                    <h3 class="text-xl font-bold text-gray-900">Edit Supplier</h3>
+                    <button onclick="closeEditSupplierModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <form id="editSupplierForm" class="p-6 space-y-4">
+                    <input type="hidden" name="supplier_id" id="edit_supplier_id">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Company Name *</label>
+                        <input type="text" name="name" id="edit_supplier_name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Contact Person</label>
+                        <input type="text" name="contact_person" id="edit_contact_person" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Enter contact person name">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                        <input type="email" name="email" id="edit_supplier_email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                        <input type="tel" name="phone" id="edit_supplier_phone" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Enter phone number">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                        <textarea name="address" id="edit_supplier_address" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" rows="3" placeholder="Enter full address"></textarea>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" name="is_active" id="edit_supplier_active" class="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500">
+                        <label class="ml-2 text-sm font-medium text-gray-700">Active Supplier</label>
+                    </div>
+                    <div class="flex space-x-3 pt-4">
+                        <button type="button" onclick="closeEditSupplierModal()" class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700">
+                            Update Supplier
+                        </button>
+                    </div>
+                </form>
+            </div>
+        `;
+                document.body.appendChild(editModal);
+
+                // Add form submit handler
+                document.getElementById('editSupplierForm').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    updateSupplier();
+                });
+            }
+
+            // Populate form with ALL supplier data
+            document.getElementById('edit_supplier_id').value = supplier.id;
+            document.getElementById('edit_supplier_name').value = supplier.name || '';
+            document.getElementById('edit_contact_person').value = supplier.contact_person || '';
+            document.getElementById('edit_supplier_email').value = supplier.email || '';
+            document.getElementById('edit_supplier_phone').value = supplier.phone || '';
+            document.getElementById('edit_supplier_address').value = supplier.address || '';
+            document.getElementById('edit_supplier_active').checked = supplier.is_active;
+
+            console.log('Form populated, showing modal'); // Debug log
+
+            // Show the modal
+            editModal.classList.remove('hidden');
+        }
+
+        function closeEditSupplierModal() {
+            const editModal = document.getElementById('editSupplierModal');
+            if (editModal) {
+                editModal.classList.add('hidden');
+            }
+        }
+
+        async function updateSupplier() {
+            const form = document.getElementById('editSupplierForm');
+            const formData = new FormData(form);
+            const supplierId = formData.get('supplier_id');
+            const submitButton = form.querySelector('button[type="submit"]');
+
+            console.log('Updating supplier:', supplierId); // Debug log
+
+            // Show loading state
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Updating...';
+
+            try {
+                // Use your existing edit route
+                const response = await fetch(`/admin/suppliers/edit/${supplierId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification('Supplier updated successfully!', 'success');
+                    closeEditSupplierModal();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Error updating supplier: ' + error, 'error');
+            } finally {
+                // Reset button state
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Update Supplier';
+            }
+        }
+
+        // Add these functions to your existing JavaScript
+
+        // User Management Functions
+        function deleteUser(userId) {
+            if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+
+            fetch(`/admin/users/delete/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification(data.message, 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showNotification(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error deleting user: ' + error, 'error');
+                });
+        }
+
+        function editUser(userId) {
+            // For now, show a simple edit modal
+            // In a real app, you'd fetch user data and populate a form
+            const newRole = prompt('Enter new role (admin/manager/cashier/supplier):');
+            if (newRole && ['admin', 'manager', 'cashier', 'supplier'].includes(newRole.toLowerCase())) {
+                updateUserRole(userId, newRole.toLowerCase());
+            } else if (newRole) {
+                showNotification('Invalid role. Must be: admin, manager, cashier, or supplier', 'error');
+            }
+        }
+
+        async function updateUserRole(userId, newRole) {
+            try {
+                const formData = new FormData();
+                formData.append('role', newRole);
+
+                const response = await fetch(`/admin/users/edit/${userId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification('User role updated successfully!', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Error updating user: ' + error, 'error');
+            }
+        }
+
+        // Supplier Management Functions
+        // function deleteSupplier(supplierId) {
+        //     if (!confirm('Are you sure you want to delete this supplier? This action cannot be undone.')) return;
+
+        //     fetch(`/admin/suppliers/delete/${supplierId}`, {
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //         }
+        //     })
+        //         .then(response => response.json())
+        //         .then(data => {
+        //             if (data.success) {
+        //                 showNotification(data.message, 'success');
+        //                 setTimeout(() => location.reload(), 1000);
+        //             } else {
+        //                 showNotification(data.message, 'error');
+        //             }
+        //         })
+        //         .catch(error => {
+        //             showNotification('Error deleting supplier: ' + error, 'error');
+        //         });
+        // }
+
+        // function editSupplier(supplierId) {
+        //     // For now, show a simple edit interface
+        //     // In a real app, you'd fetch supplier data and populate a form
+        //     const newName = prompt('Enter new company name:');
+        //     if (newName) {
+        //         updateSupplierName(supplierId, newName);
+        //     }
+        // }
+
+        // async function updateSupplierName(supplierId, newName) {
+        //     try {
+        //         const formData = new FormData();
+        //         formData.append('name', newName);
+
+        //         const response = await fetch(`/admin/suppliers/edit/${supplierId}`, {
+        //             method: 'POST',
+        //             body: formData
+        //         });
+
+        //         const result = await response.json();
+
+        //         if (result.success) {
+        //             showNotification('Supplier updated successfully!', 'success');
+        //             setTimeout(() => location.reload(), 1000);
+        //         } else {
+        //             showNotification(result.message, 'error');
+        //         }
+        //     } catch (error) {
+        //         showNotification('Error updating supplier: ' + error, 'error');
+        //     }
+        // }
+
+        // ====================
+        // UTILITY FUNCTIONS
+        // ====================
+
+        // Notification system
+        function showNotification(message, type = 'info') {
+            // Remove existing notifications
+            const existingNotifications = document.querySelectorAll('.custom-notification');
+            existingNotifications.forEach(notification => notification.remove());
+
+            const notification = document.createElement('div');
+            notification.className = `custom-notification fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white max-w-sm ${type === 'success' ? 'bg-green-500' :
+                    type === 'error' ? 'bg-red-500' :
+                        type === 'warning' ? 'bg-yellow-500' :
+                            'bg-blue-500'
+                }`;
+
+            notification.innerHTML = `
+            <div class="flex items-center justify-between">
+                <span>${message}</span>
+                <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+
+            document.body.appendChild(notification);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Form validation
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function validatePassword(password) {
+            return password.length >= 6;
+        }
+
+        // Real-time form validation for user modal
+        document.addEventListener('DOMContentLoaded', function () {
+            const userForm = document.querySelector('#userModal form');
+            if (userForm) {
+                const passwordInput = userForm.querySelector('input[name="password"]');
+                const emailInput = userForm.querySelector('input[name="email"]');
+
+                passwordInput.addEventListener('input', function () {
+                    if (!validatePassword(this.value)) {
+                        this.classList.add('border-red-500');
+                        this.classList.remove('border-gray-300');
+                    } else {
+                        this.classList.remove('border-red-500');
+                        this.classList.add('border-gray-300');
+                    }
+                });
+
+                emailInput.addEventListener('blur', function () {
+                    if (!validateEmail(this.value)) {
+                        this.classList.add('border-red-500');
+                        this.classList.remove('border-gray-300');
+                    } else {
+                        this.classList.remove('border-red-500');
+                        this.classList.add('border-gray-300');
+                    }
+                });
+            }
+        });
+
+        // Close modals on outside click and ESC key
+        window.onclick = function (event) {
+            const userModal = document.getElementById('userModal');
+            const supplierModal = document.getElementById('supplierModal');
+
+            if (event.target === userModal) {
+                closeUserModal();
+            }
+            if (event.target === supplierModal) {
+                closeSupplierModal();
+            }
+        };
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeUserModal();
+                closeSupplierModal();
+            }
+        });
+
+        // Search functionality for users table
+        function searchUsers() {
+            const input = document.getElementById('userSearch');
+            const filter = input.value.toLowerCase();
+            const table = document.querySelector('#users-section table tbody');
+            const rows = table.getElementsByTagName('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                let found = false;
+
+                for (let j = 0; j < cells.length; j++) {
+                    if (cells[j]) {
+                        if (cells[j].textContent.toLowerCase().indexOf(filter) > -1) {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (found) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        }
+
+        // ====================
+// REPORTS MODAL FUNCTIONS
+// ====================
+
+let reportsChart = null;
+
+function openReportsModal() {
+    document.getElementById('reportsModal').classList.remove('hidden');
+    loadReportsData();
+}
+
+function closeReportsModal() {
+    document.getElementById('reportsModal').classList.add('hidden');
+    // Destroy chart to free memory
+    if (reportsChart) {
+        reportsChart.destroy();
+        reportsChart = null;
+    }
+}
+
+function showReportTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.report-content').forEach(content => {
+        content.classList.add('hidden');
+        content.classList.remove('active');
+    });
+    
+    // Remove active class from all tabs
+    document.querySelectorAll('.report-tab').forEach(tab => {
+        tab.classList.remove('active');
+        tab.classList.remove('border-blue-500', 'text-blue-600');
+        tab.classList.add('border-transparent', 'text-gray-500');
+    });
+    
+    // Show selected tab content
+    document.getElementById(`${tabName}-report`).classList.remove('hidden');
+    document.getElementById(`${tabName}-report`).classList.add('active');
+    
+    // Activate selected tab
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+    document.getElementById(`${tabName}-tab`).classList.add('border-blue-500', 'text-blue-600');
+    document.getElementById(`${tabName}-tab`).classList.remove('border-transparent', 'text-gray-500');
+}
+
+async function loadReportsData() {
+    try {
+        showNotification('Loading reports data...', 'info');
+        
+        const response = await fetch('/admin/reports/data');
+        const result = await response.json();
+        
+        if (result.success) {
+            updateReportsUI(result.data);
+            initializeCharts(result.data);
+        } else {
+            showNotification('Error loading reports data', 'error');
+        }
+    } catch (error) {
+        showNotification('Error: ' + error, 'error');
+    }
+}
+
+function updateReportsUI(data) {
+    // Update quick stats
+    document.getElementById('todayRevenue').textContent = `$${data.today_revenue.toFixed(2)}`;
+    document.getElementById('todaySales').textContent = data.today_sales;
+    document.getElementById('lowStockCount').textContent = data.low_stock_count;
+    document.getElementById('activeUsersCount').textContent = data.active_users;
+    
+    // Update top products
+    const topProductsList = document.getElementById('topProductsList');
+    topProductsList.innerHTML = data.top_products.map(product => `
+        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+            <span class="font-medium">${product.name}</span>
+            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">
+                ${product.quantity_sold} sold
+            </span>
+        </div>
+    `).join('');
+    
+    // Update low stock items
+    const lowStockList = document.getElementById('lowStockList');
+    lowStockList.innerHTML = data.low_stock_items.map(item => `
+        <div class="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
+            <div>
+                <span class="font-medium">${item.name}</span>
+                <p class="text-sm text-orange-600">Stock: ${item.quantity} (Reorder: ${item.reorder_level})</p>
+            </div>
+            <span class="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-sm">
+                Low Stock
+            </span>
+        </div>
+    `).join('');
+    
+    // Update financial data
+    document.getElementById('totalInventoryValue').textContent = `$${data.total_inventory_value.toFixed(2)}`;
+    document.getElementById('grossRevenue').textContent = `$${data.gross_revenue.toFixed(2)}`;
+    document.getElementById('netProfit').textContent = `$${data.net_profit.toFixed(2)}`;
+    document.getElementById('profitMargin').textContent = `${data.profit_margin}%`;
+    
+    // Update last updated time
+    document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+}
+
+function initializeCharts(data) {
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    
+    if (reportsChart) {
+        reportsChart.destroy();
+    }
+    
+    reportsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.sales_trend.labels,
+            datasets: [{
+                label: 'Sales ($)',
+                data: data.sales_trend.data,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        drawBorder: false
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+function refreshReports() {
+    loadReportsData();
+    showNotification('Reports data refreshed', 'success');
+}
+
+function exportReport(format) {
+    showNotification(`Exporting reports as ${format.toUpperCase()}...`, 'info');
+    // In a real app, this would trigger a download
+    setTimeout(() => {
+        showNotification(`${format.toUpperCase()} export completed`, 'success');
+    }, 2000);
+}
+
+// Close modal on outside click
+window.onclick = function(event) {
+    const reportsModal = document.getElementById('reportsModal');
+    if (event.target === reportsModal) {
+        closeReportsModal();
+    }
+};
+
+// Close modal on ESC key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeReportsModal();
+    }
+});
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('Admin dashboard initialized');
+        });
+    </script>
+
+</body>
+
+</html>

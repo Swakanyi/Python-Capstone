@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supplier Management - Inventra</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .nav-item:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid #10b981;
+        }
+        .nav-item.active {
+            background: rgba(16, 185, 129, 0.15);
+            border-left: 4px solid #10b981;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    
+    <!-- MANAGER SIDEBAR -->
+    <aside class="fixed top-0 left-0 z-40 w-64 h-screen bg-white shadow-lg">
+        <div class="h-full px-3 py-4 overflow-y-auto">
+            
+            <!-- Logo -->
+            <div class="flex items-center mb-5 px-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-clipboard-list text-white text-xl"></i>
+                </div>
+                <div class="ml-3">
+                    <h2 class="text-xl font-bold text-gray-800">Manager Panel</h2>
+                    <p class="text-xs text-gray-500">Inventory Control</p>
+                </div>
+            </div>
+
+            <!-- User Info -->
+            <div class="mb-5 p-3 bg-green-50 rounded-lg border border-green-100">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {{ current_user.username[0].upper() }}
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800">{{ current_user.username }}</p>
+                        <p class="text-xs text-green-600">Inventory Manager</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manager Navigation -->
+            <nav class="space-y-2">
+                <p class="px-3 text-xs font-semibold text-gray-500 uppercase mb-2">Manager Menu</p>
+                
+                <a href="{{ url_for('manager_dashboard') }}" class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-chart-line w-5"></i>
+                    <span class="ml-3">Dashboard</span>
+                </a>
+                
+                <a href="{{ url_for('manage_products') }}" class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-box w-5"></i>
+                    <span class="ml-3">Products</span>
+                </a>
+                
+                <a href="{{ url_for('manage_categories') }}" class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-tags w-5"></i>
+                    <span class="ml-3">Categories</span>
+                </a>
+                
+                <a href="{{ url_for('manage_suppliers') }}" class="nav-item active flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-truck w-5"></i>
+                    <span class="ml-3">Suppliers</span>
+                </a>
+                
+                <a href="{{ url_for('manage_inventory') }}" class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-clipboard-list w-5"></i>
+                    <span class="ml-3">Inventory</span>
+                </a>
+                
+                <a href="{{ url_for('manage_purchase_orders') }}" class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-shopping-cart w-5"></i>
+                    <span class="ml-3">Purchase Orders</span>
+                </a>
+                
+                <a href="{{ url_for('manage_reports') }}" class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-chart-bar w-5"></i>
+                    <span class="ml-3">Reports</span>
+                </a>
+                
+                <hr class="my-3 border-gray-200">
+                
+                <a href="{{ url_for('logout') }}" class="nav-item flex items-center px-3 py-2.5 text-red-600 rounded-lg hover:bg-red-50">
+                    <i class="fas fa-sign-out-alt w-5"></i>
+                    <span class="ml-3">Logout</span>
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="ml-64">
+        
+        <!-- Top Header -->
+        <header class="bg-white shadow-sm sticky top-0 z-30">
+            <div class="flex items-center justify-between px-6 py-4">
+                <h1 class="text-xl font-semibold text-gray-800">Supplier Management</h1>
+                
+                <div class="flex items-center space-x-4">
+                    <button class="relative text-gray-600 hover:text-gray-800">
+                        <i class="fas fa-bell text-xl"></i>
+                    </button>
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                        {{ current_user.username[0].upper() }}
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- PAGE CONTENT -->
+        <main class="p-6">
+            <!-- Header with Search and Stats -->
+            <div class="mb-6">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Supplier Management</h2>
+                        <p class="text-gray-600">Manage suppliers and their products</p>
+                    </div>
+                    <div class="flex space-x-3 mt-4 lg:mt-0">
+                        <button onclick="exportSuppliers()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium">
+                            <i class="fas fa-download mr-2"></i>Export
+                        </button>
+                        <button onclick="refreshSuppliers()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
+                            <i class="fas fa-sync-alt mr-2"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search and Filter -->
+                <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                    <div class="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4">
+                        <!-- Search -->
+                        <div class="flex-1">
+                            <div class="relative">
+                                <input type="text" 
+                                       id="supplier-search" 
+                                       placeholder="Search suppliers, products, contacts..." 
+                                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Filters -->
+                        <div class="flex space-x-3">
+                            <select id="status-filter" class="w-40 pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="all">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                            
+                            <select id="products-filter" class="w-48 pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="all">All Suppliers</option>
+                                <option value="with-products">With Products</option>
+                                <option value="no-products">No Products</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div id="supplier-stats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <!-- Stats will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Suppliers Grid -->
+            <div id="suppliers-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <!-- Suppliers will be loaded here -->
+            </div>
+
+            <!-- Loading State -->
+            <div id="suppliers-loading" class="text-center py-12">
+                <i class="fas fa-spinner fa-spin text-3xl text-gray-400 mb-3"></i>
+                <p class="text-gray-500">Loading suppliers...</p>
+            </div>
+
+            <!-- No Results State -->
+            <div id="no-suppliers" class="hidden text-center py-12 bg-white rounded-lg shadow-sm">
+                <i class="fas fa-truck text-4xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-500">No Suppliers Found</h3>
+                <p class="text-gray-400 mt-2">No suppliers match your search criteria.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        let suppliersData = [];
+        let filteredSuppliers = [];
+
+        // Load suppliers on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSuppliers();
+            setupSearchListeners();
+        });
+
+        // Setup search and filter listeners
+        function setupSearchListeners() {
+            const searchInput = document.getElementById('supplier-search');
+            const statusFilter = document.getElementById('status-filter');
+            const productsFilter = document.getElementById('products-filter');
+            
+            searchInput.addEventListener('input', debounce(filterSuppliers, 300));
+            statusFilter.addEventListener('change', filterSuppliers);
+            productsFilter.addEventListener('change', filterSuppliers);
+        }
+
+        // Debounce function
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Load suppliers from API
+        // In manager/sup.html - update the fetch URL
+async function loadSuppliers() {
+    try {
+        showLoading(true);
+        
+        const response = await fetch('/manager/suppliers/json');  // This should work now
+        const data = await response.json();
+        
+        if (data.success) {
+            suppliersData = data.suppliers;
+            filteredSuppliers = [...suppliersData];
+            renderSuppliers();
+            updateSupplierStats();
+        } else {
+            showNotification('Failed to load suppliers', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading suppliers:', error);
+        showNotification('Error loading suppliers', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+        
+
+        // Filter suppliers
+        function filterSuppliers() {
+            const searchTerm = document.getElementById('supplier-search').value.toLowerCase();
+            const statusValue = document.getElementById('status-filter').value;
+            const productsValue = document.getElementById('products-filter').value;
+            
+            filteredSuppliers = suppliersData.filter(supplier => {
+                // Search filter
+                const matchesSearch = searchTerm === '' || 
+                    supplier.name.toLowerCase().includes(searchTerm) ||
+                    supplier.contact_person.toLowerCase().includes(searchTerm) ||
+                    supplier.email.toLowerCase().includes(searchTerm) ||
+                    (supplier.phone && supplier.phone.toLowerCase().includes(searchTerm)) ||
+                    supplier.products.some(product => 
+                        product.name.toLowerCase().includes(searchTerm) ||
+                        product.sku.toLowerCase().includes(searchTerm)
+                    );
+                
+                // Status filter
+                let matchesStatus = true;
+                if (statusValue === 'active') {
+                    matchesStatus = supplier.is_active;
+                } else if (statusValue === 'inactive') {
+                    matchesStatus = !supplier.is_active;
+                }
+                
+                // Products filter
+                let matchesProducts = true;
+                if (productsValue === 'with-products') {
+                    matchesProducts = supplier.products.length > 0;
+                } else if (productsValue === 'no-products') {
+                    matchesProducts = supplier.products.length === 0;
+                }
+                
+                return matchesSearch && matchesStatus && matchesProducts;
+            });
+            
+            renderSuppliers();
+        }
+
+        // Render supplier cards
+        function renderSuppliers() {
+            const container = document.getElementById('suppliers-container');
+            const noSuppliers = document.getElementById('no-suppliers');
+            
+            if (filteredSuppliers.length === 0) {
+                container.innerHTML = '';
+                noSuppliers.classList.remove('hidden');
+                return;
+            }
+            
+            noSuppliers.classList.add('hidden');
+            
+            container.innerHTML = filteredSuppliers.map(supplier => `
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                    <!-- Supplier Header -->
+                    <div class="p-6 border-b border-gray-100">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-truck text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-gray-900 text-lg">${supplier.name}</h3>
+                                    <p class="text-sm text-gray-500">${supplier.contact_person}</p>
+                                </div>
+                            </div>
+                            <span class="px-3 py-1 text-xs rounded-full ${supplier.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                ${supplier.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                        </div>
+                        
+                        <!-- Contact Info -->
+                        <div class="space-y-2 text-sm">
+                            <div class="flex items-center text-gray-600">
+                                <i class="fas fa-envelope w-4 mr-2"></i>
+                                <span class="truncate">${supplier.email}</span>
+                            </div>
+                            ${supplier.phone ? `
+                            <div class="flex items-center text-gray-600">
+                                <i class="fas fa-phone w-4 mr-2"></i>
+                                <span>${supplier.phone}</span>
+                            </div>
+                            ` : ''}
+                            ${supplier.address ? `
+                            <div class="flex items-center text-gray-600">
+                                <i class="fas fa-map-marker-alt w-4 mr-2"></i>
+                                <span class="truncate">${supplier.address}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <!-- Products Section -->
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="font-semibold text-gray-800">Products (${supplier.products.length})</h4>
+                            <span class="text-xs text-gray-500">Last: ${formatDate(supplier.last_product_added)}</span>
+                        </div>
+                        
+                        ${supplier.products.length > 0 ? `
+                        <div class="space-y-3 max-h-48 overflow-y-auto">
+                            ${supplier.products.slice(0, 5).map(product => `
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-medium text-gray-900 truncate">${product.name}</p>
+                                    <div class="flex items-center space-x-3 text-xs text-gray-500 mt-1">
+                                        <span>SKU: ${product.sku}</span>
+                                        <span>KES ${product.selling_price}</span>
+                                        <span class="px-1 rounded ${product.quantity <= product.reorder_level ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
+                                            Stock: ${product.quantity}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            `).join('')}
+                            
+                            ${supplier.products.length > 5 ? `
+                            <div class="text-center pt-2">
+                                <span class="text-sm text-blue-600">+${supplier.products.length - 5} more products</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                        ` : `
+                        <div class="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                            <i class="fas fa-box-open text-2xl text-gray-300 mb-2"></i>
+                            <p class="text-sm text-gray-500">No products added yet</p>
+                        </div>
+                        `}
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="px-6 py-4 bg-gray-50 rounded-b-xl border-t">
+                        <div class="flex space-x-2">
+                            <button onclick="viewSupplier(${supplier.id})" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-medium">
+                                <i class="fas fa-eye mr-1"></i> View
+                            </button>
+                            <button onclick="contactSupplier(${supplier.id})" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-lg text-sm font-medium">
+                                <i class="fas fa-envelope mr-1"></i> Contact
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update supplier statistics
+        function updateSupplierStats() {
+            const statsContainer = document.getElementById('supplier-stats');
+            
+            const totalSuppliers = suppliersData.length;
+            const activeSuppliers = suppliersData.filter(s => s.is_active).length;
+            const suppliersWithProducts = suppliersData.filter(s => s.products.length > 0).length;
+            const totalProducts = suppliersData.reduce((sum, s) => sum + s.products.length, 0);
+            
+            statsContainer.innerHTML = `
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-truck text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900">${totalSuppliers}</p>
+                            <p class="text-sm text-blue-700">Total Suppliers</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-check-circle text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900">${activeSuppliers}</p>
+                            <p class="text-sm text-green-700">Active Suppliers</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-box text-purple-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900">${suppliersWithProducts}</p>
+                            <p class="text-sm text-purple-700">With Products</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-cubes text-orange-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900">${totalProducts}</p>
+                            <p class="text-sm text-orange-700">Total Products</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Utility functions
+        function formatDate(dateString) {
+            if (!dateString) return 'Never';
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        }
+
+        function showLoading(show) {
+            const loading = document.getElementById('suppliers-loading');
+            const container = document.getElementById('suppliers-container');
+            
+            if (show) {
+                loading.classList.remove('hidden');
+                container.classList.add('hidden');
+            } else {
+                loading.classList.add('hidden');
+                container.classList.remove('hidden');
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Simple notification - you can enhance this with a proper notification system
+            alert(`${type.toUpperCase()}: ${message}`);
+        }
+
+        // Action functions
+        function refreshSuppliers() {
+            loadSuppliers();
+        }
+
+        function exportSuppliers() {
+            showNotification('Export feature coming soon!', 'info');
+        }
+
+        function viewSupplier(supplierId) {
+            showNotification(`View supplier ${supplierId} - Feature coming soon!`, 'info');
+        }
+
+        function contactSupplier(supplierId) {
+            const supplier = suppliersData.find(s => s.id === supplierId);
+            if (supplier) {
+                window.location.href = `mailto:${supplier.email}?subject=Inventory%20Query&body=Hello%20${encodeURIComponent(supplier.contact_person)}`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cashier Dashboard - Inventra</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .nav-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid #3b82f6;
+        }
+        .nav-item.active {
+            background: rgba(59, 130, 246, 0.15);
+            border-left: 4px solid #3b82f6;
+            font-weight: 600;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .receipt-print {
+            width: 80mm;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    
+    <!-- CASHIER SIDEBAR -->
+    <aside class="fixed top-0 left-0 z-40 w-64 h-screen bg-white shadow-lg">
+        <div class="h-full px-3 py-4 overflow-y-auto">
+            
+            <!-- Logo -->
+            <div class="flex items-center mb-5 px-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-cash-register text-white text-xl"></i>
+                </div>
+                <div class="ml-3">
+                    <h2 class="text-xl font-bold text-gray-800">Cashier Panel</h2>
+                    <p class="text-xs text-gray-500">Point of Sale</p>
+                </div>
+            </div>
+
+            <!-- User Info -->
+            <div class="mb-5 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {{ current_user.username[0].upper() }}
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800">{{ current_user.username }}</p>
+                        <p class="text-xs text-blue-600">Cashier</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cashier Navigation -->
+            <nav class="space-y-2">
+                <p class="px-3 text-xs font-semibold text-gray-500 uppercase mb-2">POS Menu</p>
+                
+                <a href="#" onclick="showSection('pos')" class="nav-item active flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-shopping-cart w-5"></i>
+                    <span class="ml-3">Point of Sale</span>
+                </a>
+                
+                <a href="#" onclick="showSection('sales')" class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-history w-5"></i>
+                    <span class="ml-3">Sales History</span>
+                </a>
+                
+                <a href="#" onclick="showSection('products')" class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-search w-5"></i>
+                    <span class="ml-3">Product Search</span>
+                </a>
+                
+                <hr class="my-3 border-gray-200">
+                
+                <a href="{{ url_for('logout') }}" class="nav-item flex items-center px-3 py-2.5 text-red-600 rounded-lg hover:bg-red-50">
+                    <i class="fas fa-sign-out-alt w-5"></i>
+                    <span class="ml-3">Logout</span>
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="ml-64">
+        
+        <!-- Top Header -->
+        <header class="bg-white shadow-sm sticky top-0 z-30">
+            <div class="flex items-center justify-between px-6 py-4">
+                <h1 id="pageTitle" class="text-xl font-semibold text-gray-800">Point of Sale</h1>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <p class="text-sm text-gray-600">Cashier: {{ current_user.username }}</p>
+                        <p class="text-xs text-gray-500" id="currentTime">{{ current_time }}</p>
+                    </div>
+                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                        {{ current_user.username[0].upper() }}
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- PAGE CONTENT -->
+        <main class="p-6">
+            
+            <!-- POINT OF SALE SECTION -->
+            <div id="pos-section" class="content-section active">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column - Product Search & Cart -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Product Search -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Product Search</h3>
+                            <div class="flex space-x-4">
+                                <div class="flex-1">
+                                    <input type="text" id="productSearch" placeholder="Search by product name, SKU, or barcode..." 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <button onclick="searchProducts()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold">
+                                    <i class="fas fa-search mr-2"></i>Search
+                                </button>
+                            </div>
+                            
+                            <!-- Search Results -->
+                            <div id="searchResults" class="mt-4 max-h-60 overflow-y-auto hidden">
+                                <div class="space-y-2" id="searchResultsList">
+                                    <!-- Search results will appear here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Shopping Cart -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900">Shopping Cart</h3>
+                                <button onclick="clearCart()" class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                    <i class="fas fa-trash mr-1"></i>Clear Cart
+                                </button>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <div id="emptyCart" class="text-center py-8">
+                                    <i class="fas fa-shopping-cart text-4xl text-gray-300 mb-3"></i>
+                                    <p class="text-gray-600 font-medium">Your cart is empty</p>
+                                    <p class="text-sm text-gray-500 mt-1">Search for products to add them to your cart</p>
+                                </div>
+                                
+                                <div id="cartItems" class="space-y-3 hidden">
+                                    <!-- Cart items will appear here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column - Checkout Panel -->
+                    <div class="space-y-6">
+                        <!-- Customer Information -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Customer Information</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Customer Name (Optional)</label>
+                                    <input type="text" id="customerName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter customer name">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
+                                    <input type="tel" id="customerPhone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter phone number">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Order Summary -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Subtotal:</span>
+                                    <span id="subtotalAmount" class="font-semibold">KES 0.00</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Tax (16%):</span>
+                                    <span id="taxAmount" class="font-semibold">KES 0.00</span>
+                                </div>
+                                <hr>
+                                <div class="flex justify-between text-lg font-bold">
+                                    <span>Total:</span>
+                                    <span id="totalAmount" class="text-green-600">KES 0.00</span>
+                                </div>
+                            </div>
+
+                            <!-- Payment Method -->
+                            <div class="mt-6">
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Payment Method</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="setPaymentMethod('cash')" class="payment-method bg-blue-50 border-2 border-blue-200 text-blue-700 py-3 rounded-lg font-medium transition-colors">
+                                        <i class="fas fa-money-bill-wave mr-2"></i>Cash
+                                    </button>
+                                    <button onclick="setPaymentMethod('card')" class="payment-method bg-gray-50 border-2 border-gray-200 text-gray-700 py-3 rounded-lg font-medium transition-colors">
+                                        <i class="fas fa-credit-card mr-2"></i>Card
+                                    </button>
+                                    <button onclick="setPaymentMethod('mpesa')" class="payment-method bg-green-50 border-2 border-gray-200 text-gray-700 py-3 rounded-lg font-medium transition-colors">
+                                        <i class="fas fa-mobile-alt mr-2"></i>M-Pesa
+                                    </button>
+                                    <button onclick="setPaymentMethod('bank')" class="payment-method bg-purple-50 border-2 border-gray-200 text-gray-700 py-3 rounded-lg font-medium transition-colors">
+                                        <i class="fas fa-university mr-2"></i>Bank
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Checkout Button -->
+                            <button onclick="processCheckout()" id="checkoutBtn" disabled 
+                                    class="w-full mt-6 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-4 rounded-lg font-bold text-lg transition-colors">
+                                <i class="fas fa-check-circle mr-2"></i>Complete Sale
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SALES HISTORY SECTION -->
+            <div id="sales-section" class="content-section">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Sales History</h2>
+                        <div class="flex space-x-4">
+                            <input type="date" id="salesDateFilter" class="px-3 py-2 border border-gray-300 rounded-lg">
+                            <button onclick="loadSalesHistory()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                                <i class="fas fa-filter mr-2"></i>Filter
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Sale #</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Date & Time</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Customer</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Items</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Payment</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Total</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="salesHistoryBody">
+                                <!-- Sales history will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PRODUCT SEARCH SECTION -->
+            <div id="products-section" class="content-section">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Product Catalog</h2>
+                    
+                    <div class="mb-6">
+                        <input type="text" id="catalogSearch" placeholder="Search products..." 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               onkeyup="searchCatalog()">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="productCatalog">
+                        <!-- Products will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- RECEIPT MODAL -->
+    <div id="receiptModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Sale Receipt</h3>
+                    <button onclick="closeReceipt()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div id="receiptContent" class="receipt-print bg-white p-4 border-2 border-dashed border-gray-300">
+                    <!-- Receipt content will be loaded here -->
+                </div>
+                <div class="mt-4 flex space-x-2">
+                    <button onclick="printReceipt()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg">
+                        <i class="fas fa-print mr-2"></i>Print
+                    </button>
+                    <button onclick="closeReceipt()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-lg">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let cart = [];
+        let selectedPaymentMethod = null;
+        let products = [];
+
+        // Section Switching
+        function showSection(sectionName) {
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionName + '-section').classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            
+            const titles = {
+                'pos': 'Point of Sale',
+                'sales': 'Sales History',
+                'products': 'Product Catalog'
+            };
+            document.getElementById('pageTitle').textContent = titles[sectionName];
+            
+            if (sectionName === 'sales') loadSalesHistory();
+            if (sectionName === 'products') loadProductCatalog();
+        }
+
+        // Product Search
+        function searchProducts() {
+            const query = document.getElementById('productSearch').value.toLowerCase();
+            if (query.length < 2) return;
+            
+            fetch(`/cashier/search-products?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    const resultsDiv = document.getElementById('searchResults');
+                    const resultsList = document.getElementById('searchResultsList');
+                    
+                    resultsList.innerHTML = '';
+                    
+                    if (data.products && data.products.length > 0) {
+                        data.products.forEach(product => {
+                            const productDiv = document.createElement('div');
+                            productDiv.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg border';
+                            productDiv.innerHTML = `
+                                <div>
+                                    <p class="font-medium text-gray-900">${product.name}</p>
+                                    <p class="text-sm text-gray-500">KES ${product.selling_price} | Stock: ${product.quantity}</p>
+                                </div>
+                                <button onclick="addToCart(${product.id}, '${product.name}', ${product.selling_price}, ${product.quantity})" 
+                                        class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-medium">
+                                    <i class="fas fa-plus mr-1"></i> Add
+                                </button>
+                            `;
+                            resultsList.appendChild(productDiv);
+                        });
+                        resultsDiv.classList.remove('hidden');
+                    } else {
+                        resultsDiv.classList.add('hidden');
+                    }
+                });
+        }
+
+        // Cart Management
+        function addToCart(productId, productName, price, stock) {
+            const existingItem = cart.find(item => item.id === productId);
+            
+            if (existingItem) {
+                if (existingItem.quantity < stock) {
+                    existingItem.quantity++;
+                } else {
+                    alert('Not enough stock available!');
+                    return;
+                }
+            } else {
+                if (stock > 0) {
+                    cart.push({
+                        id: productId,
+                        name: productName,
+                        price: price,
+                        quantity: 1,
+                        stock: stock
+                    });
+                } else {
+                    alert('Product out of stock!');
+                    return;
+                }
+            }
+            
+            updateCartDisplay();
+            document.getElementById('productSearch').value = '';
+            document.getElementById('searchResults').classList.add('hidden');
+        }
+
+        function updateCartItem(productId, change) {
+            const item = cart.find(item => item.id === productId);
+            if (item) {
+                const newQuantity = item.quantity + change;
+                if (newQuantity > 0 && newQuantity <= item.stock) {
+                    item.quantity = newQuantity;
+                } else if (newQuantity === 0) {
+                    cart = cart.filter(item => item.id !== productId);
+                } else if (newQuantity > item.stock) {
+                    alert('Not enough stock available!');
+                }
+            }
+            updateCartDisplay();
+        }
+
+        function updateCartDisplay() {
+            const cartItemsDiv = document.getElementById('cartItems');
+            const emptyCartDiv = document.getElementById('emptyCart');
+            const checkoutBtn = document.getElementById('checkoutBtn');
+            
+            if (cart.length === 0) {
+                cartItemsDiv.classList.add('hidden');
+                emptyCartDiv.classList.remove('hidden');
+                checkoutBtn.disabled = true;
+            } else {
+                cartItemsDiv.classList.remove('hidden');
+                emptyCartDiv.classList.add('hidden');
+                checkoutBtn.disabled = false;
+                
+                cartItemsDiv.innerHTML = '';
+                let subtotal = 0;
+                
+                cart.forEach(item => {
+                    const itemTotal = item.price * item.quantity;
+                    subtotal += itemTotal;
+                    
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg border';
+                    itemDiv.innerHTML = `
+                        <div class="flex-1">
+                            <p class="font-medium text-gray-900">${item.name}</p>
+                            <p class="text-sm text-gray-500">KES ${item.price.toFixed(2)} each</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="updateCartItem(${item.id}, -1)" class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                <i class="fas fa-minus text-sm"></i>
+                            </button>
+                            <span class="font-semibold w-8 text-center">${item.quantity}</span>
+                            <button onclick="updateCartItem(${item.id}, 1)" class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                <i class="fas fa-plus text-sm"></i>
+                            </button>
+                            <span class="font-semibold w-20 text-right">KES ${itemTotal.toFixed(2)}</span>
+                            <button onclick="updateCartItem(${item.id}, -${item.quantity})" class="text-red-600 hover:text-red-800 ml-2">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    cartItemsDiv.appendChild(itemDiv);
+                });
+                
+                const tax = subtotal * 0.16; // 16% VAT
+                const total = subtotal + tax;
+                
+                document.getElementById('subtotalAmount').textContent = `KES ${subtotal.toFixed(2)}`;
+                document.getElementById('taxAmount').textContent = `KES ${tax.toFixed(2)}`;
+                document.getElementById('totalAmount').textContent = `KES ${total.toFixed(2)}`;
+            }
+        }
+
+        function clearCart() {
+            if (cart.length > 0 && confirm('Are you sure you want to clear the cart?')) {
+                cart = [];
+                updateCartDisplay();
+                selectedPaymentMethod = null;
+                updatePaymentButtons();
+            }
+        }
+
+        // Payment Methods
+        function setPaymentMethod(method) {
+            selectedPaymentMethod = method;
+            updatePaymentButtons();
+        }
+
+        function updatePaymentButtons() {
+            document.querySelectorAll('.payment-method').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'bg-blue-100', 'text-blue-700');
+                btn.classList.add('border-gray-200', 'bg-gray-50', 'text-gray-700');
+            });
+            
+            if (selectedPaymentMethod) {
+                const selectedBtn = document.querySelector(`.payment-method[onclick="setPaymentMethod('${selectedPaymentMethod}')"]`);
+                if (selectedBtn) {
+                    selectedBtn.classList.remove('border-gray-200', 'bg-gray-50', 'text-gray-700');
+                    selectedBtn.classList.add('border-blue-500', 'bg-blue-100', 'text-blue-700');
+                }
+            }
+        }
+
+        // Checkout Process
+        function processCheckout() {
+            if (cart.length === 0) {
+                alert('Cart is empty!');
+                return;
+            }
+            
+            if (!selectedPaymentMethod) {
+                alert('Please select a payment method!');
+                return;
+            }
+            
+            const customerName = document.getElementById('customerName').value;
+            const customerPhone = document.getElementById('customerPhone').value;
+            
+            const saleData = {
+                items: cart,
+                customer_name: customerName,
+                customer_phone: customerPhone,
+                payment_method: selectedPaymentMethod
+            };
+            
+            fetch('/cashier/process-sale', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(saleData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showReceipt(data.sale);
+                    cart = [];
+                    updateCartDisplay();
+                    selectedPaymentMethod = null;
+                    updatePaymentButtons();
+                    document.getElementById('customerName').value = '';
+                    document.getElementById('customerPhone').value = '';
+                } else {
+                    alert('Error processing sale: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error processing sale: ' + error);
+            });
+        }
+
+        // Receipt Functions
+        function showReceipt(sale) {
+            const receiptContent = document.getElementById('receiptContent');
+            receiptContent.innerHTML = `
+                <div class="text-center mb-4">
+                    <h2 class="text-xl font-bold">INVENTRA STORE</h2>
+                    <p class="text-sm">Thank you for your purchase!</p>
+                </div>
+                <div class="text-xs space-y-1">
+                    <div class="flex justify-between">
+                        <span>Sale #:</span>
+                        <span>${sale.sale_number}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Date:</span>
+                        <span>${new Date(sale.sale_date).toLocaleString()}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Cashier:</span>
+                        <span>{{ current_user.username }}</span>
+                    </div>
+                    <hr class="my-2">
+                    ${sale.items.map(item => `
+                        <div class="flex justify-between">
+                            <span>${item.product_name} x${item.quantity}</span>
+                            <span>KES ${(item.unit_price * item.quantity).toFixed(2)}</span>
+                        </div>
+                    `).join('')}
+                    <hr class="my-2">
+                    <div class="flex justify-between font-semibold">
+                        <span>Total:</span>
+                        <span>KES ${sale.total_amount}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Payment:</span>
+                        <span>${sale.payment_method.toUpperCase()}</span>
+                    </div>
+                    ${sale.customer_name ? `<div class="flex justify-between"><span>Customer:</span><span>${sale.customer_name}</span></div>` : ''}
+                    <hr class="my-2">
+                    <p class="text-center text-xs">Thank you for shopping with us!</p>
+                </div>
+            `;
+            document.getElementById('receiptModal').classList.remove('hidden');
+        }
+
+        function closeReceipt() {
+            document.getElementById('receiptModal').classList.add('hidden');
+        }
+
+        function printReceipt() {
+            const receiptContent = document.getElementById('receiptContent').innerHTML;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Receipt</title>
+                        <style>
+                            body { font-family: 'Courier New', monospace; margin: 0; padding: 10px; }
+                            .receipt { width: 80mm; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="receipt">${receiptContent}</div>
+                        <script>
+                            window.onload = function() {
+                                window.print();
+                                setTimeout(() => window.close(), 1000);
+                            }
+                        <\/script>
+                    </body>
+                </html>
+            `);
+        }
+
+        // Sales History
+        function loadSalesHistory() {
+            const dateFilter = document.getElementById('salesDateFilter').value;
+            let url = '/cashier/sales-history';
+            if (dateFilter) {
+                url += `?date=${dateFilter}`;
+            }
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById('salesHistoryBody');
+                    tbody.innerHTML = '';
+                    
+                    if (data.sales && data.sales.length > 0) {
+                        data.sales.forEach(sale => {
+                            const row = document.createElement('tr');
+                            row.className = 'border-b hover:bg-gray-50';
+                            row.innerHTML = `
+                                <td class="px-4 py-3 text-sm">${sale.sale_number}</td>
+                                <td class="px-4 py-3 text-sm">${new Date(sale.sale_date).toLocaleString()}</td>
+                                <td class="px-4 py-3 text-sm">${sale.customer_name || 'Walk-in'}</td>
+                                <td class="px-4 py-3 text-sm">${sale.items_count} items</td>
+                                <td class="px-4 py-3 text-sm"><span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">${sale.payment_method}</span></td>
+                                <td class="px-4 py-3 text-sm font-semibold">KES ${sale.total_amount}</td>
+                                <td class="px-4 py-3 text-sm">
+                                    <button onclick="viewReceipt(${sale.id})" class="text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-receipt mr-1"></i>Receipt
+                                    </button>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">No sales found</td></tr>';
+                    }
+                });
+        }
+
+        function viewReceipt(saleId) {
+            fetch(`/cashier/sale-receipt/${saleId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showReceipt(data.sale);
+                    }
+                });
+        }
+
+        // Product Catalog
+        function loadProductCatalog() {
+            fetch('/cashier/products')
+                .then(response => response.json())
+                .then(data => {
+                    products = data.products || [];
+                    displayProducts(products);
+                });
+        }
+
+        function searchCatalog() {
+            const query = document.getElementById('catalogSearch').value.toLowerCase();
+            const filteredProducts = products.filter(product => 
+                product.name.toLowerCase().includes(query) || 
+                product.sku.toLowerCase().includes(query)
+            );
+            displayProducts(filteredProducts);
+        }
+
+        function displayProducts(productsToShow) {
+            const catalogDiv = document.getElementById('productCatalog');
+            catalogDiv.innerHTML = '';
+            
+            if (productsToShow.length === 0) {
+                catalogDiv.innerHTML = '<div class="col-span-3 text-center py-8 text-gray-500">No products found</div>';
+                return;
+            }
+            
+            productsToShow.forEach(product => {
+                const productDiv = document.createElement('div');
+                productDiv.className = 'bg-gray-50 rounded-lg border p-4 hover:shadow-md transition-shadow';
+                productDiv.innerHTML = `
+                    <div class="flex items-center space-x-3 mb-3">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-box text-blue-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-gray-900">${product.name}</h3>
+                            <p class="text-sm text-gray-500">${product.sku}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2 mb-4">
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-600">Price</span>
+                            <span class="font-semibold text-green-600">KES ${product.selling_price}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-600">Stock</span>
+                            <span class="font-semibold ${product.quantity > 0 ? 'text-green-600' : 'text-red-600'}">${product.quantity}</span>
+                        </div>
+                    </div>
+                    <button onclick="addToCart(${product.id}, '${product.name}', ${product.selling_price}, ${product.quantity})" 
+                            ${product.quantity === 0 ? 'disabled' : ''}
+                            class="w-full ${product.quantity > 0 ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 cursor-not-allowed'} text-white py-2 rounded-lg font-medium transition-colors">
+                        ${product.quantity > 0 ? '<i class="fas fa-plus mr-2"></i>Add to Cart' : 'Out of Stock'}
+                    </button>
+                `;
+                catalogDiv.appendChild(productDiv);
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCartDisplay();
+            // Update time every minute
+            setInterval(() => {
+                document.getElementById('currentTime').textContent = new Date().toLocaleString();
+            }, 60000);
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F2') {
+                document.getElementById('productSearch').focus();
+                e.preventDefault();
+            }
+            if (e.key === 'F9' && !document.getElementById('checkoutBtn').disabled) {
+                processCheckout();
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>

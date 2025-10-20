@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Dashboard - Inventra</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        .nav-item:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid #10b981;
+        }
+
+        .nav-item.active {
+            background: rgba(16, 185, 129, 0.15);
+            border-left: 4px solid #10b981;
+            font-weight: 600;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+
+    <!-- MANAGER SIDEBAR -->
+    <aside class="fixed top-0 left-0 z-40 w-64 h-screen bg-white shadow-lg">
+        <div class="h-full px-3 py-4 overflow-y-auto">
+
+            <!-- Logo -->
+            <div class="flex items-center mb-5 px-3">
+                <div
+                    class="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-clipboard-list text-white text-xl"></i>
+                </div>
+                <div class="ml-3">
+                    <h2 class="text-xl font-bold text-gray-800">Manager Panel</h2>
+                    <p class="text-xs text-gray-500">Inventory Control</p>
+                </div>
+            </div>
+
+            <!-- User Info -->
+            <div class="mb-5 p-3 bg-green-50 rounded-lg border border-green-100">
+                <div class="flex items-center space-x-3">
+                    <div
+                        class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {{ current_user.username[0].upper() }}
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800">{{ current_user.username }}</p>
+                        <p class="text-xs text-green-600">Inventory Manager</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manager Navigation -->
+            <nav class="space-y-2">
+                <p class="px-3 text-xs font-semibold text-gray-500 uppercase mb-2">Manager Menu</p>
+
+                <a href="#" onclick="showSection('dashboard')"
+                    class="nav-item active flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-chart-line w-5"></i>
+                    <span class="ml-3">Dashboard</span>
+                </a>
+
+                <a href="{{ url_for('manage_products') }}"
+                    class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-box w-5"></i>
+                    <span class="ml-3">Products</span>
+                </a>
+
+                <a href="{{ url_for('manage_categories') }}"
+                    class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-tags w-5"></i>
+                    <span class="ml-3">Categories</span>
+                </a>
+
+                <a href="{{ url_for('manage_inventory') }}"
+                    class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-clipboard-list w-5"></i>
+                    <span class="ml-3">Inventory</span>
+                </a>
+
+                <a href="{{ url_for('manage_purchase_orders') }}"
+                    class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-shopping-cart w-5"></i>
+                    <span class="ml-3">Purchase Orders</span>
+                </a>
+
+
+                <a href="{{ url_for('manage_sup') }}"
+                    class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-truck w-5"></i>
+                    <span class="ml-3">Suppliers</span>
+                </a>
+
+                <a href="{{ url_for('manage_reports') }}"
+                    class="nav-item flex items-center px-3 py-2.5 text-gray-700 rounded-lg">
+                    <i class="fas fa-chart-bar w-5"></i>
+                    <span class="ml-3">Reports</span>
+                </a>
+
+                <hr class="my-3 border-gray-200">
+
+                <a href="{{ url_for('logout') }}"
+                    class="nav-item flex items-center px-3 py-2.5 text-red-600 rounded-lg hover:bg-red-50">
+                    <i class="fas fa-sign-out-alt w-5"></i>
+                    <span class="ml-3">Logout</span>
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="ml-64">
+
+        <!-- Top Header -->
+        <header class="bg-white shadow-sm sticky top-0 z-30">
+            <div class="flex items-center justify-between px-6 py-4">
+                <h1 id="pageTitle" class="text-xl font-semibold text-gray-800">Dashboard</h1>
+
+                <div class="flex items-center space-x-4">
+                    <button class="relative text-gray-600 hover:text-gray-800">
+                        <i class="fas fa-bell text-xl"></i>
+                        {% if low_stock_count > 0 %}
+                        <span
+                            class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{{
+                            low_stock_count }}</span>
+                        {% endif %}
+                    </button>
+                    <div
+                        class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                        {{ current_user.username[0].upper() }}
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- PAGE CONTENT -->
+        <main class="p-6">
+
+            <!-- DASHBOARD SECTION -->
+            <div id="dashboard-section" class="content-section active">
+                <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white mb-6">
+                    <h2 class="text-2xl font-bold mb-2">Welcome back, {{ current_user.username }}! 📊</h2>
+                    <p class="text-green-100">Inventory Management Dashboard</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="fas fa-box text-blue-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-gray-500 text-sm mb-1">Total Products</h3>
+                        <p class="text-3xl font-bold text-gray-900">{{ total_products }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Active products in inventory</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition">
+                        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-gray-500 text-sm mb-1">Low Stock</h3>
+                        <p class="text-3xl font-bold text-gray-900">{{ low_stock_count }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Need reordering</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="fas fa-tags text-green-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-gray-500 text-sm mb-1">Categories</h3>
+                        <p class="text-3xl font-bold text-gray-900">{{ total_categories }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Product categories</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                            <i class="fas fa-dollar-sign text-purple-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-gray-500 text-sm mb-1">Stock Value</h3>
+                        <p class="text-3xl font-bold text-gray-900">KES {{ "{:,.0f}".format(total_stock_value) }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Total inventory value</p>
+                    </div>
+                </div>
+
+                <!-- Main Content Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Left Column -->
+                    <div class="lg:col-span-2 space-y-8">
+                        <!-- Low Stock Alerts -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900">Low Stock Alerts</h3>
+                                {% if low_stock_count > 0 %}
+                                <span class="bg-red-100 text-red-800 text-sm px-3 py-1 rounded-full font-medium">
+                                    {{ low_stock_count }} items need attention
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="space-y-3">
+                                {% if low_stock_products %}
+                                {% for product in low_stock_products %}
+                                <div
+                                    class="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-exclamation-circle text-red-600"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-900">{{ product.name }}</p>
+                                            <p class="text-sm text-red-600">
+                                                Current: {{ product.quantity }} | Reorder at: {{ product.reorder_level
+                                                }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button onclick="editProduct('{{ product.id }}')"
+                                            class="text-blue-600 hover:text-blue-800 px-3 py-1 rounded text-sm font-medium">
+                                            <i class="fas fa-edit mr-1"></i> Edit
+                                        </button>
+                                        <button
+                                            onclick="createOrder('{{ product.id }}', '{{ product.name }}', '{{ product.supplier_id }}')"
+                                            class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-medium">
+                                            <i class="fas fa-shopping-cart mr-1"></i> Order
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <div class="text-center py-8">
+                                    <i class="fas fa-check-circle text-green-500 text-4xl mb-3"></i>
+                                    <p class="text-gray-600 font-medium">All products are well stocked!</p>
+                                    <p class="text-sm text-gray-500 mt-1">No low stock alerts at this time</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <a href="{{ url_for('manage_products') }}" onclick="showSection('products')"
+                                    class="p-4 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors text-center">
+                                    <i class="fas fa-plus text-blue-600 text-lg mb-2"></i>
+                                    <p class="font-medium text-blue-700 text-sm">Add Product</p>
+                                </a>
+                                <a href="{{ url_for('manage_categories') }}" onclick="showSection('categories')"
+                                    class="p-4 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition-colors text-center">
+                                    <i class="fas fa-tags text-green-600 text-lg mb-2"></i>
+                                    <p class="font-medium text-green-700 text-sm">Categories</p>
+                                </a>
+                                <a href="{{ url_for('manage_inventory') }}" onclick="showSection('inventory')"
+                                    class="p-4 bg-purple-50 rounded-lg border border-purple-200 hover:bg-purple-100 transition-colors text-center">
+                                    <i class="fas fa-clipboard-list text-purple-600 text-lg mb-2"></i>
+                                    <p class="font-medium text-purple-700 text-sm">Stock Take</p>
+                                </a>
+                                <a href="{{ url_for('manage_purchase_orders') }}" onclick="showSection('orders')"
+                                    class="p-4 bg-orange-50 rounded-lg border border-orange-200 hover:bg-orange-100 transition-colors text-center">
+                                    <i class="fas fa-shopping-cart text-orange-600 text-lg mb-2"></i>
+                                    <p class="font-medium text-orange-700 text-sm">New Order</p>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="space-y-8">
+                        <!-- Inventory Summary -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Inventory Summary</h3>
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-600">Total Products</span>
+                                    <span class="font-bold text-gray-900">{{ total_products }}</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-600">Categories</span>
+                                    <span class="font-bold text-gray-900">{{ total_categories }}</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-600">Suppliers</span>
+                                    <span class="font-bold text-gray-900">{{ total_suppliers }}</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                    <span class="text-sm text-gray-600">Avg Stock Level</span>
+                                    <span class="font-bold text-gray-900">{{ average_stock_level }}</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                                    <span class="text-sm text-green-700">Total Value</span>
+                                    <span class="font-bold text-green-600">KES {{ "{:,.0f}".format(total_stock_value)
+                                        }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Today's Performance -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Today's Performance</h3>
+                            <div class="space-y-3">
+                                <div class="text-center p-4 bg-blue-50 rounded-lg">
+                                    <p class="text-2xl font-bold text-blue-600">KES {{
+                                        "{:,.0f}".format(today_sales_total) }}</p>
+                                    <p class="text-sm text-blue-700">Today's Sales</p>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-600">Transactions</span>
+                                    <span class="font-bold text-gray-900">{{ today_sales_count }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-600">Out of Stock</span>
+                                    <span class="font-bold text-red-600">{{ out_of_stock_count }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- System Status -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">System Status</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-600">Inventory Sync</span>
+                                    <span
+                                        class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">Active</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-600">Stock Alerts</span>
+                                    <span
+                                        class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">Enabled</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-600">Last Backup</span>
+                                    <span class="text-sm text-gray-900">2 hours ago</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OTHER SECTIONS (Placeholders for now) -->
+            <div id="products-section" class="content-section">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Product Management</h2>
+                    <p class="text-gray-600">Product management interface coming soon...</p>
+                </div>
+            </div>
+
+            <div id="categories-section" class="content-section">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Category Management</h2>
+                    <p class="text-gray-600">Category management interface coming soon...</p>
+                </div>
+            </div>
+
+            <div id="inventory-section" class="content-section">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Inventory Management</h2>
+                    <p class="text-gray-600">Inventory management interface coming soon...</p>
+                </div>
+            </div>
+
+            <div id="orders-section" class="content-section">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Purchase Orders</h2>
+                    <p class="text-gray-600">Purchase order management coming soon...</p>
+                </div>
+            </div>
+
+            <div id="reports-section" class="content-section">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Inventory Reports</h2>
+                    <p class="text-gray-600">Reporting interface coming soon...</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // Section Switching (same as admin)
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Show selected section
+            document.getElementById(sectionName + '-section').classList.add('active');
+
+            // Update active nav item
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+
+            // Update page title
+            const titles = {
+                'dashboard': 'Dashboard',
+                'products': 'Manage Products',
+                'categories': 'Manage Categories',
+                'inventory': 'Inventory Management',
+                'orders': 'Purchase Orders',
+                'reports': 'Reports'
+            };
+            document.getElementById('pageTitle').textContent = titles[sectionName];
+        }
+
+        // Manager-specific functions
+        // Manager-specific functions
+function editProduct(productId) {
+    // Redirect to product management with edit mode
+    window.location.href = "{{ url_for('manage_products') }}?edit=" + productId;
+}
+
+function createOrder(productId, productName, supplierId) {
+    // Redirect to purchase orders with pre-filled data
+    const params = new URLSearchParams({
+        product_id: productId,
+        product_name: productName,
+        supplier_id: supplierId
+    });
+    window.location.href = "{{ url_for('manage_purchase_orders') }}?" + params.toString();
+}
+
+// Enhanced section switching to handle URL parameters
+function showSection(sectionName) {
+    // Hide all sections
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Show selected section
+    document.getElementById(sectionName + '-section').classList.add('active');
+    
+    // Update active nav item
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    event.currentTarget.classList.add('active');
+    
+    // Update page title
+    const titles = {
+        'dashboard': 'Dashboard',
+        'products': 'Manage Products',
+        'categories': 'Manage Categories',
+        'inventory': 'Inventory Management',
+        'orders': 'Purchase Orders',
+        'reports': 'Reports'
+    };
+    document.getElementById('pageTitle').textContent = titles[sectionName];
+    
+    // If switching to orders section, check for pre-fill data
+    if (sectionName === 'orders') {
+        checkOrderPreFill();
+    }
+}
+
+        // Notification system (you can reuse from admin)
+        function showNotification(message, type = 'info') {
+            alert(message); // Simple alert for now
+        }
+    </script>
+
+</body>
+
+</html>
