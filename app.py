@@ -73,7 +73,7 @@ def login():
         if user and user.check_password(password):
             if user.is_active:
                 login_user(user)
-                flash(f'Welcome back, {user.username}!', 'success')
+                # flash(f'Welcome back, {user.username}!', 'success')
                 
                 
                 return redirect(url_for('index'))
@@ -145,7 +145,7 @@ def register():
 def logout():
     """Logout current user"""
     logout_user()
-    flash('You have been logged out successfully.', 'info')
+    # flash('You have been logged out successfully.', 'info')
     return redirect(url_for('login'))
 
 
@@ -1336,6 +1336,11 @@ def add_purchase_order():
         # Calculate total amount
         total_amount = quantity * unit_price
         
+        # Get supplier information
+        supplier = Supplier.query.get(supplier_id)
+        if not supplier:
+            return jsonify({'success': False, 'message': 'Supplier not found'})
+        
         # Create purchase order
         purchase_order = PurchaseOrder(
             order_number=order_number,
@@ -1348,6 +1353,19 @@ def add_purchase_order():
         )
         
         db.session.add(purchase_order)
+        
+        # Create notification for supplier if they have a user account
+        if supplier.user_id:
+            notification = Notification(
+                user_id=supplier.user_id,
+                title='New Purchase Order',
+                message=f'New purchase order #{order_number} has been created for you. Total: KES {total_amount:,.2f}',
+                type='info',
+                related_type='purchase_order',
+                related_id=purchase_order.id
+            )
+            db.session.add(notification)
+        
         db.session.commit()
         
         return jsonify({
@@ -1577,7 +1595,7 @@ def manage_reports():
 @app.route('/supplier/dashboard')
 @login_required
 def supplier_dashboard():
-    """Supplier dashboard - shows their product catalog"""
+    """Supplier dashboard - shows their product catalog WITH NOTIFICATIONS"""
     if current_user.role != 'supplier':
         flash('Access denied. Supplier only.', 'danger')
         return redirect(url_for('index'))
@@ -1589,7 +1607,7 @@ def supplier_dashboard():
         flash('Supplier profile not found.', 'warning')
         return render_template('supplier/supplier.html', supplier=None)
     
-    # Get supplier's product catalog (NOT main inventory products)
+    # Get supplier's product catalog
     supplier_products = SupplierProduct.query.filter_by(supplier_id=supplier.id).all()
     
     # Get purchase orders for this supplier
@@ -1598,9 +1616,14 @@ def supplier_dashboard():
     # Get categories for product form
     categories = Category.query.all()
     
-    # Calculate stats - FIXED: pending_orders should only include 'pending' status
+    # Get notifications for current supplier
+    notifications = Notification.query.filter_by(user_id=current_user.id)\
+        .order_by(Notification.created_at.desc())\
+        .limit(10).all()
+    
+    # Calculate stats
     total_orders = len(purchase_orders)
-    pending_orders = len([po for po in purchase_orders if po.status == 'pending'])  # Only actual pending orders
+    pending_orders = len([po for po in purchase_orders if po.status == 'pending'])
     delivered_orders = len([po for po in purchase_orders if po.status == 'delivered'])
     total_products = len(supplier_products)
     
@@ -1610,11 +1633,11 @@ def supplier_dashboard():
                          products=supplier_products,
                          categories=categories,
                          total_orders=total_orders,
-                         pending_orders=pending_orders,  # This shows orders awaiting supplier action
+                         pending_orders=pending_orders,
                          delivered_orders=delivered_orders,
-                         total_products=total_products)
+                         total_products=total_products,
+                         notifications=notifications)  
 
-# Add these routes to your app.py
 
 @app.route('/supplier/orders/<int:order_id>/confirm', methods=['POST'])
 @login_required
