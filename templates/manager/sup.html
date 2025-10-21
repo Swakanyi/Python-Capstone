@@ -361,13 +361,14 @@ async function loadSuppliers() {
                             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
                                 <div class="flex-1 min-w-0">
                                     <p class="font-medium text-gray-900 truncate">${product.name}</p>
-                                    <div class="flex items-center space-x-3 text-xs text-gray-500 mt-1">
-                                        <span>SKU: ${product.sku}</span>
-                                        <span>KES ${product.selling_price}</span>
-                                        <span class="px-1 rounded ${product.quantity <= product.reorder_level ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
-                                            Stock: ${product.quantity}
-                                        </span>
-                                    </div>
+                                    
+<div class="flex items-center space-x-3 text-xs text-gray-500 mt-1">
+    <span>SKU: ${product.sku}</span>
+    <span>KES ${product.price}</span>
+    <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+        ${product.unit || 'piece'}
+    </span>
+</div>
                                 </div>
                             </div>
                             `).join('')}

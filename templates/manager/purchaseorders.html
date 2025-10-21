@@ -6,6 +6,14 @@
     <title>Purchase Orders - Inventra</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        .status-pending { background-color: #fef3c7; color: #92400e; }
+.status-approved { background-color: #dbeafe; color: #1e40af; }
+.status-ordered { background-color: #e9d5ff; color: #7e22ce; }
+.status-delivered { background-color: #d1fae5; color: #065f46; }
+.status-cancelled { background-color: #fee2e2; color: #991b1b; }
+    </style>
 </head>
 <body class="bg-gray-100">
     
@@ -94,144 +102,252 @@
             </div>
 
             <!-- Purchase Orders Table -->
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h3 class="text-lg font-semibold text-gray-800">All Purchase Orders ({{ purchase_orders|length }})</h3>
-                </div>
+<div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+        <h3 class="text-lg font-semibold text-gray-800">All Purchase Orders ({{ purchase_orders|length }})</h3>
+        <div class="flex space-x-2">
+            <select id="statusFilter" onchange="filterOrders()" class="border border-gray-300 rounded-lg px-3 py-1 text-sm">
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="ordered">Ordered</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+    </div>
 
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order #</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Supplier</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order Date</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expected Delivery</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Amount</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        {% for order in purchase_orders %}
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="font-medium text-gray-900">{{ order.order_number }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ order.supplier.name }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ order.order_date.strftime('%b %d, %Y') }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {% if order.expected_delivery %}
-                                {{ order.expected_delivery.strftime('%b %d, %Y') }}
-                                {% else %}
-                                <span class="text-gray-400">Not set</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                                KES {{ "%.2f"|format(order.total_amount) }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full 
-                                    {% if order.status == 'pending' %}bg-yellow-100 text-yellow-800
-                                    {% elif order.status == 'approved' %}bg-blue-100 text-blue-800
-                                    {% elif order.status == 'ordered' %}bg-purple-100 text-purple-800
-                                    {% elif order.status == 'delivered' %}bg-green-100 text-green-800
-                                    {% else %}bg-red-100 text-red-800{% endif %}">
-                                    {{ order.status|title }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <div class="flex space-x-2">
-                                    <button onclick="viewOrder('{{ order.id }}')" class="text-blue-600 hover:text-blue-900" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button onclick="editOrder('{{ order.id }}')" class="text-green-600 hover:text-green-900" title="Update Status">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">
-                                <i class="fas fa-shopping-cart text-4xl mb-3 text-gray-300"></i>
-                                <p>No purchase orders found</p>
-                                <p class="text-sm mt-2">Create your first purchase order to get started</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order #</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Supplier</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expected Delivery</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Amount</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200" id="ordersTableBody">
+            {% for order in purchase_orders %}
+            <tr class="hover:bg-gray-50 order-row" data-status="{{ order.status }}">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="font-medium text-gray-900">{{ order.order_number }}</div>
+                    <div class="text-xs text-gray-500">By: {{ order.creator.username }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">{{ order.supplier.name }}</div>
+                    <div class="text-xs text-gray-500">{{ order.supplier.contact_person }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {{ order.order_date.strftime('%b %d, %Y') }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {% if order.expected_delivery %}
+                    {{ order.expected_delivery.strftime('%b %d, %Y') }}
+                    {% else %}
+                    <span class="text-gray-400">Not set</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                    KES {{ "%.2f"|format(order.total_amount) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full status-{{ order.status }}">
+                        {{ order.status|title }}
+                    </span>
+                    {% if order.delivery_date and order.status == 'delivered' %}
+                    <div class="text-xs text-gray-500 mt-1">
+                        Delivered: {{ order.delivery_date.strftime('%b %d') }}
+                    </div>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div class="flex space-x-2">
+                        <button onclick="viewOrder('{{ order.id }}')" class="text-blue-600 hover:text-blue-900" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button onclick="updateOrderStatus('{{ order.id }}')" class="text-green-600 hover:text-green-900" title="Update Status">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        {% if order.status == 'pending' %}
+                        <button onclick="cancelOrder('{{ order.id }}')" class="text-red-600 hover:text-red-900" title="Cancel Order">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                    <i class="fas fa-shopping-cart text-4xl mb-3 text-gray-300"></i>
+                    <p>No purchase orders found</p>
+                    <p class="text-sm mt-2">Create your first purchase order to get started</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
         </main>
     </div>
 
     <!-- NEW PURCHASE ORDER MODAL -->
-    <div id="poModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4">
-            <div class="flex items-center justify-between p-6 border-b">
-                <h3 class="text-xl font-bold text-gray-900">New Purchase Order</h3>
-                <button onclick="closePOModal()" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times text-xl"></i>
+<div id="poModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4">
+        <div class="flex items-center justify-between p-6 border-b">
+            <h3 class="text-xl font-bold text-gray-900">New Purchase Order</h3>
+            <button onclick="closePOModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <form id="poForm" class="p-6 space-y-4" onsubmit="createPurchaseOrder(event)">
+            <!-- Single Supplier Select with Dynamic Filtering -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Supplier *</label>
+                <select name="supplier_id" id="supplier_select" required 
+                        onchange="loadSupplierProducts(this.value)"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <option value="">Select Supplier</option>
+                    {% for supplier in suppliers %}
+                    <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Expected Delivery Date</label>
+                <input type="date" name="expected_delivery" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+            </div>
+
+            <!-- Dynamic Products Section -->
+            <div id="products_section" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Product *</label>
+                <select name="product_id" id="product_select" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <option value="">Select a supplier first</option>
+                </select>
+            </div>
+
+            <!-- Product Details Display -->
+            <div id="product_details" class="hidden p-4 bg-gray-50 rounded-lg mt-2">
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-600">Price:</span>
+                        <span id="product_price" class="font-semibold text-green-600 ml-2">-</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Unit:</span>
+                        <span id="product_unit" class="font-semibold ml-2">-</span>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-gray-600">Description:</span>
+                        <span id="product_description" class="ml-2">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quantity and Unit Price -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Quantity *</label>
+                    <input type="number" name="quantity" required min="1" value="1" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Unit Price (KES) *</label>
+                    <input type="number" name="unit_price" id="unit_price_input" required min="0" step="0.01" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                           placeholder="Auto-filled from product">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                <textarea name="notes" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Any special instructions..."></textarea>
+            </div>
+
+            <div class="flex space-x-3 pt-4">
+                <button type="button" onclick="closePOModal()" class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">
+                    Cancel
+                </button>
+                <button type="submit" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                    Create Order
                 </button>
             </div>
-            
-            <form id="poForm" class="p-6 space-y-4" onsubmit="createPurchaseOrder(event)">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Supplier *</label>
-                    <select name="supplier_id" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        <option value="">Select Supplier</option>
-                        {% for supplier in suppliers %}
-                        <option value="{{ supplier.id }}">{{ supplier.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Expected Delivery Date</label>
-                    <input type="date" name="expected_delivery" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                </div>
-
-                <!-- Add this section for products -->
-<div>
-    <label class="block text-sm font-medium text-gray-700 mb-2">Products *</label>
-    <select name="product_id" required class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-        <option value="">Select Product</option>
-        {% for product in products %}
-        <option value="{{ product.id }}">{{ product.name }} - {{ product.sku }}</option>
-        {% endfor %}
-    </select>
+        </form>
+    </div>
 </div>
 
-<div>
-    <label class="block text-sm font-medium text-gray-700 mb-2">Quantity *</label>
-    <input type="number" name="quantity" required min="1" class="w-full px-4 py-2 border rounded-lg">
-</div>
-
-<div>
-    <label class="block text-sm font-medium text-gray-700 mb-2">Unit Price (KES) *</label>
-    <input type="number" name="unit_price" required min="0" step="0.01" class="w-full px-4 py-2 border rounded-lg">
-</div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
-                    <textarea name="notes" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Any special instructions..."></textarea>
-                </div>
-
-                <div class="flex space-x-3 pt-4">
-                    <button type="button" onclick="closePOModal()" class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">
-                        Cancel
-                    </button>
-                    <button type="submit" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                        Create Order
-                    </button>
-                </div>
-            </form>
+<!-- Status Update Modal -->
+<div id="statusModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
+        <div class="flex items-center justify-between p-6 border-b">
+            <h3 class="text-xl font-bold text-gray-900">Update Order Status</h3>
+            <button onclick="closeStatusModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div class="p-6">
+            <div class="space-y-3">
+                <button onclick="setOrderStatus('pending')" class="w-full text-left p-3 border border-yellow-200 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="font-semibold text-yellow-800">Pending</span>
+                            <p class="text-sm text-yellow-600">Order is awaiting approval</p>
+                        </div>
+                        <i class="fas fa-clock text-yellow-600"></i>
+                    </div>
+                </button>
+                
+                <button onclick="setOrderStatus('approved')" class="w-full text-left p-3 border border-blue-200 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="font-semibold text-blue-800">Approved</span>
+                            <p class="text-sm text-blue-600">Order approved, ready to send to supplier</p>
+                        </div>
+                        <i class="fas fa-check-circle text-blue-600"></i>
+                    </div>
+                </button>
+                
+                <button onclick="setOrderStatus('ordered')" class="w-full text-left p-3 border border-purple-200 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="font-semibold text-purple-800">Ordered</span>
+                            <p class="text-sm text-purple-600">Order sent to supplier</p>
+                        </div>
+                        <i class="fas fa-truck text-purple-600"></i>
+                    </div>
+                </button>
+                
+                <button onclick="setOrderStatus('delivered')" class="w-full text-left p-3 border border-green-200 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="font-semibold text-green-800">Delivered</span>
+                            <p class="text-sm text-green-600">Order received from supplier</p>
+                        </div>
+                        <i class="fas fa-box-open text-green-600"></i>
+                    </div>
+                </button>
+                
+                <button onclick="setOrderStatus('cancelled')" class="w-full text-left p-3 border border-red-200 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="font-semibold text-red-800">Cancelled</span>
+                            <p class="text-sm text-red-600">Order has been cancelled</p>
+                        </div>
+                        <i class="fas fa-times-circle text-red-600"></i>
+                    </div>
+                </button>
+            </div>
         </div>
     </div>
+</div>
 
     <!-- JavaScript -->
     <script>
@@ -536,6 +652,195 @@ function showNotification(message, type = 'info') {
             notification.remove();
         }
     }, 5000);
+}
+
+// Load supplier products when supplier is selected
+async function loadSupplierProducts(supplierId) {
+    const productSelect = document.getElementById('product_select');
+    const productsSection = document.getElementById('products_section');
+    const productDetails = document.getElementById('product_details');
+    
+    if (!supplierId) {
+        productsSection.classList.add('hidden');
+        productDetails.classList.add('hidden');
+        productSelect.innerHTML = '<option value="">Select a supplier first</option>';
+        return;
+    }
+    
+    try {
+        // Show loading
+        productSelect.innerHTML = '<option value="">Loading products...</option>';
+        productsSection.classList.remove('hidden');
+        
+        // Fetch supplier products
+        const response = await fetch(`/manager/suppliers/${supplierId}/products`);
+        const result = await response.json();
+        
+        if (result.success && result.products.length > 0) {
+            productSelect.innerHTML = '<option value="">Select Product</option>';
+            
+            result.products.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product.id;
+                option.textContent = `${product.name} - ${product.sku}`;
+                option.setAttribute('data-price', product.price);
+                option.setAttribute('data-unit', product.unit);
+                option.setAttribute('data-description', product.description || 'No description');
+                productSelect.appendChild(option);
+            });
+            
+            // Add change listener to show product details
+            productSelect.onchange = function() {
+                showProductDetails(this);
+            };
+            
+        } else {
+            productSelect.innerHTML = '<option value="">No products available for this supplier</option>';
+            productDetails.classList.add('hidden');
+        }
+        
+    } catch (error) {
+        console.error('Error loading products:', error);
+        productSelect.innerHTML = '<option value="">Error loading products</option>';
+    }
+}
+
+// Show product details when product is selected
+function showProductDetails(selectElement) {
+    const productDetails = document.getElementById('product_details');
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    
+    if (selectedOption.value) {
+        const productPrice = selectedOption.getAttribute('data-price');
+        
+        document.getElementById('product_price').textContent = `KES ${productPrice}`;
+        document.getElementById('product_unit').textContent = selectedOption.getAttribute('data-unit') || 'piece';
+        document.getElementById('product_description').textContent = selectedOption.getAttribute('data-description');
+        productDetails.classList.remove('hidden');
+        
+        // Auto-fill unit price in the form
+        document.getElementById('unit_price_input').value = productPrice;
+    } else {
+        productDetails.classList.add('hidden');
+        document.getElementById('unit_price_input').value = '';
+    }
+}
+
+// Update your createPurchaseOrder function to handle the new flow
+async function createPurchaseOrder(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    
+    // Validate that a product is selected
+    const productId = formData.get('product_id');
+    if (!productId) {
+        alert('Please select a product');
+        return;
+    }
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creating...';
+    
+    try {
+        const response = await fetch('/manager/purchase-orders/add', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Purchase order created successfully!');
+            closePOModal();
+            location.reload();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        alert('Error creating purchase order: ' + error);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Create Order';
+    }
+}
+
+let currentOrderId = null;
+
+// Status Management
+function updateOrderStatus(orderId) {
+    currentOrderId = orderId;
+    document.getElementById('statusModal').classList.remove('hidden');
+}
+
+function closeStatusModal() {
+    document.getElementById('statusModal').classList.add('hidden');
+    currentOrderId = null;
+}
+
+async function setOrderStatus(status) {
+    if (!currentOrderId) return;
+    
+    try {
+        const formData = new FormData();
+        formData.append('status', status);
+        
+        const response = await fetch(`/manager/purchase-orders/update-status/${currentOrderId}`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`Order status updated to ${status}`);
+            closeStatusModal();
+            location.reload();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        alert('Error updating status: ' + error);
+    }
+}
+
+async function cancelOrder(orderId) {
+    if (confirm('Are you sure you want to cancel this order?')) {
+        try {
+            const formData = new FormData();
+            formData.append('status', 'cancelled');
+            
+            const response = await fetch(`/manager/purchase-orders/update-status/${orderId}`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('Order cancelled successfully');
+                location.reload();
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (error) {
+            alert('Error cancelling order: ' + error);
+        }
+    }
+}
+
+// Filter orders by status
+function filterOrders() {
+    const status = document.getElementById('statusFilter').value;
+    const orderRows = document.querySelectorAll('.order-row');
+    
+    orderRows.forEach(row => {
+        if (status === 'all' || row.dataset.status === status) {
+            row.style.display = 'table-row';
+        } else {
+            row.style.display = 'none';
+        }
+    });
 }
 </script>
     

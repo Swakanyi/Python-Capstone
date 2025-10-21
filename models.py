@@ -185,6 +185,7 @@ class PurchaseOrder(db.Model):
     expected_delivery = db.Column(db.DateTime)
     delivery_date = db.Column(db.DateTime)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
     notes = db.Column(db.Text)
 
     #links to
@@ -218,3 +219,23 @@ class StockMovement(db.Model):
 
     def __repr__(self):
         return f"<StockMovement {self.movement_type} - {self.product.name} ({self.quantity})>"  
+    
+#NOTIFICATIONS
+   
+
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+    id = db.Column(db.Integer, primary_key=True)  # Primary key is properly defined
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    type = db.Column(db.String(50), default='info')
+    is_read = db.Column(db.Boolean, default=False)
+    related_type = db.Column(db.String(50))
+    related_id = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='notifications')
+
+    def __repr__(self):
+        return f"<Notification {self.title} for {self.user.username}>"

@@ -1,7 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import Config
-from models import db, User, Product, Category, Supplier, Sale, SaleItem, PurchaseOrder, StockMovement, SupplierProduct
+from models import db, User, Product, Category, Supplier, Sale, SaleItem, PurchaseOrder, StockMovement, SupplierProduct, Notification
 from datetime import datetime, date, timedelta
 import cloudinary
 import cloudinary.uploader
@@ -921,12 +921,17 @@ def cashier_products():
 @app.route('/manager/dashboard')
 @login_required
 def manager_dashboard():
-    """Store Manager dashboard"""
+    """Store Manager dashboard - UPDATED WITH NOTIFICATIONS"""
     if current_user.role != 'manager':
         flash('Access denied. Manager only.', 'danger')
         return redirect(url_for('index'))
     
+    # Get notifications for current manager
+    notifications = Notification.query.filter_by(user_id=current_user.id)\
+        .order_by(Notification.created_at.desc())\
+        .limit(10).all()
     
+    # Existing stats code...
     total_products = Product.query.count()
     total_categories = Category.query.count()
     total_suppliers = Supplier.query.count()
@@ -937,7 +942,7 @@ def manager_dashboard():
     ).all()
     out_of_stock_products = Product.query.filter(Product.quantity == 0).all()
     
-    #inventory value
+    # Inventory value
     products = Product.query.all()
     total_stock_value = sum(product.cost_price * product.quantity for product in products)
     average_stock_level = sum(product.quantity for product in products) / len(products) if products else 0
@@ -945,12 +950,13 @@ def manager_dashboard():
     # Recent stock movements (last 10)
     recent_movements = StockMovement.query.order_by(StockMovement.timestamp.desc()).limit(10).all()
     
-    
+    # Today's sales
     from datetime import datetime, date
     today_sales = Sale.query.filter(db.func.date(Sale.sale_date) == date.today()).all()
     today_sales_total = sum(sale.total_amount for sale in today_sales)
     
     return render_template('manager/manager.html',
+                         notifications=notifications,  # Add this line
                          total_products=total_products,
                          total_categories=total_categories,
                          total_suppliers=total_suppliers,
@@ -1592,21 +1598,162 @@ def supplier_dashboard():
     # Get categories for product form
     categories = Category.query.all()
     
-    # Calculate stats
+    # Calculate stats - FIXED: pending_orders should only include 'pending' status
     total_orders = len(purchase_orders)
-    pending_orders = len([po for po in purchase_orders if po.status in ['pending', 'approved', 'ordered']])
+    pending_orders = len([po for po in purchase_orders if po.status == 'pending'])  # Only actual pending orders
     delivered_orders = len([po for po in purchase_orders if po.status == 'delivered'])
     total_products = len(supplier_products)
     
     return render_template('supplier/supplier.html',
                          supplier=supplier,
                          purchase_orders=purchase_orders,
-                         products=supplier_products,  # Now shows supplier's catalog
+                         products=supplier_products,
                          categories=categories,
                          total_orders=total_orders,
-                         pending_orders=pending_orders,
+                         pending_orders=pending_orders,  # This shows orders awaiting supplier action
                          delivered_orders=delivered_orders,
                          total_products=total_products)
+
+# Add these routes to your app.py
+
+@app.route('/supplier/orders/<int:order_id>/confirm', methods=['POST'])
+@login_required
+def supplier_confirm_order(order_id):
+    """Supplier confirms they can fulfill the order - FIXED VERSION"""
+    if current_user.role != 'supplier':
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    try:
+        supplier = Supplier.query.filter_by(user_id=current_user.id).first()
+        if not supplier:
+            return jsonify({'success': False, 'message': 'Supplier profile not found'})
+        
+        order = PurchaseOrder.query.filter_by(id=order_id, supplier_id=supplier.id).first()
+        if not order:
+            return jsonify({'success': False, 'message': 'Order not found'})
+        
+        # FIXED: Check if order is pending (not approved)
+        if order.status != 'pending':
+            return jsonify({'success': False, 'message': 'Order is not in pending status'})
+        
+        # Update order status to approved (supplier accepts)
+        order.status = 'approved'
+        
+        # Create notification for manager
+        notification = Notification(
+            user_id=order.created_by,  # Notify the manager who created the order
+            title='Order Accepted by Supplier',
+            message=f'Supplier {supplier.name} has accepted purchase order #{order.order_number}',
+            type='success',
+            related_type='purchase_order',
+            related_id=order.id
+        )
+        db.session.add(notification)
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Order confirmed successfully'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+# @app.route('/supplier/orders/<int:order_id>/decline', methods=['POST'])
+# @login_required
+# def supplier_decline_order(order_id):
+#     """Supplier declines the order - FIXED VERSION"""
+#     if current_user.role != 'supplier':
+#         return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+#     try:
+#         supplier = Supplier.query.filter_by(user_id=current_user.id).first()
+#         if not supplier:
+#             return jsonify({'success': False, 'message': 'Supplier profile not found'})
+        
+#         order = PurchaseOrder.query.filter_by(id=order_id, supplier_id=supplier.id).first()
+#         if not order:
+#             return jsonify({'success': False, 'message': 'Order not found'})
+        
+#         data = request.get_json()
+#         reason = data.get('reason', 'No reason provided')
+        
+#         # Update order status to cancelled
+#         order.status = 'cancelled'
+        
+#         # Create notification for manager
+#         notification = Notification(
+#             user_id=order.created_by,
+#             title='Order Declined by Supplier',
+#             message=f'Supplier {supplier.name} declined order {order.order_number}. Reason: {reason}',
+#             type='error',
+#             related_type='purchase_order',
+#             related_id=order.id
+#         )
+#         db.session.add(notification)
+        
+#         db.session.commit()
+        
+#         return jsonify({'success': True, 'message': 'Order declined successfully'})
+        
+#     except Exception as e:
+#         db.session.rollback()
+#         return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@app.route('/supplier/orders/<int:order_id>/update-status', methods=['POST'])
+@login_required
+def supplier_update_order_status(order_id):
+    """Supplier updates order status for shipping/delivery"""
+    if current_user.role != 'supplier':
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    try:
+        supplier = Supplier.query.filter_by(user_id=current_user.id).first()
+        if not supplier:
+            return jsonify({'success': False, 'message': 'Supplier profile not found'})
+        
+        order = PurchaseOrder.query.filter_by(id=order_id, supplier_id=supplier.id).first()
+        if not order:
+            return jsonify({'success': False, 'message': 'Order not found'})
+        
+        data = request.get_json()
+        new_status = data.get('status')
+        
+        # Validate status
+        valid_statuses = ['ordered', 'delivered']
+        if new_status not in valid_statuses:
+            return jsonify({'success': False, 'message': 'Invalid status'})
+        
+        # Update order status
+        old_status = order.status
+        order.status = new_status
+        
+        # If delivered, update delivery date
+        if new_status == 'delivered':
+            order.delivery_date = datetime.utcnow()
+            
+        # Create notification for manager
+        status_messages = {
+            'ordered': f'Supplier {supplier.name} has shipped order {order.order_number}',
+            'delivered': f'Supplier {supplier.name} has delivered order {order.order_number}'
+        }
+        
+        notification = Notification(
+            user_id=order.created_by,
+            title=f'Order {new_status.title()} by Supplier',
+            message=status_messages.get(new_status, f'Order status updated to {new_status}'),
+            type='info',
+            related_type='purchase_order',
+            related_id=order.id
+        )
+        db.session.add(notification)
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': f'Order status updated to {new_status}'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
 
 @app.route('/supplier/orders/<int:order_id>/details')
 @login_required
@@ -1647,25 +1794,25 @@ def get_order_details(order_id):
     
     return jsonify({'success': True, 'html': html})
 
-@app.route('/supplier/orders/<int:order_id>/update-status', methods=['POST'])
-@login_required
-def supplier_update_order_status(order_id):
-    """Supplier updates order status"""
-    if current_user.role != 'supplier':
-        return jsonify({'success': False, 'message': 'Access denied'}), 403
+# @app.route('/supplier/orders/<int:order_id>/update-status', methods=['POST'])
+# @login_required
+# def supplier_update_order_status(order_id):
+#     """Supplier updates order status"""
+#     if current_user.role != 'supplier':
+#         return jsonify({'success': False, 'message': 'Access denied'}), 403
     
-    try:
-        order = PurchaseOrder.query.get_or_404(order_id)
-        data = request.get_json()
-        new_status = data.get('status')
+#     try:
+#         order = PurchaseOrder.query.get_or_404(order_id)
+#         data = request.get_json()
+#         new_status = data.get('status')
         
-        order.status = new_status
-        db.session.commit()
+#         order.status = new_status
+#         db.session.commit()
         
-        return jsonify({'success': True, 'message': 'Status updated'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'message': str(e)})
+#         return jsonify({'success': True, 'message': 'Status updated'})
+#     except Exception as e:
+#         db.session.rollback()
+#         return jsonify({'success': False, 'message': str(e)})
 
 # ====================
 # SUPPLIER PRODUCT ROUTES
@@ -1834,6 +1981,122 @@ def delete_supplier_product(product_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+    
+
+@app.route('/supplier/products/<int:product_id>')
+@login_required
+def get_supplier_product(product_id):
+    """Get single supplier product for editing"""
+    if current_user.role != 'supplier':
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    try:
+        supplier = Supplier.query.filter_by(user_id=current_user.id).first()
+        if not supplier:
+            return jsonify({'success': False, 'message': 'Supplier profile not found'})
+        
+        product = SupplierProduct.query.filter_by(id=product_id, supplier_id=supplier.id).first()
+        if not product:
+            return jsonify({'success': False, 'message': 'Product not found'})
+        
+        product_data = {
+            'id': product.id,
+            'name': product.name,
+            'sku': product.sku,
+            'description': product.description,
+            'price': float(product.price),
+            'category_id': product.category_id,
+            'image_url': product.image_url,
+            'unit': product.unit
+        }
+        
+        return jsonify({'success': True, 'product': product_data})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})   
+
+
+# @app.route('/supplier/orders/<int:order_id>/confirm', methods=['POST'])
+# @login_required
+# def supplier_confirm_order(order_id):
+#     """Supplier confirms they can fulfill the order"""
+#     if current_user.role != 'supplier':
+#         return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+#     try:
+#         supplier = Supplier.query.filter_by(user_id=current_user.id).first()
+#         if not supplier:
+#             return jsonify({'success': False, 'message': 'Supplier profile not found'})
+        
+#         order = PurchaseOrder.query.filter_by(id=order_id, supplier_id=supplier.id).first()
+#         if not order:
+#             return jsonify({'success': False, 'message': 'Order not found'})
+        
+#         if order.status != 'approved':
+#             return jsonify({'success': False, 'message': 'Order must be approved first'})
+        
+#         # Update order status
+#         order.status = 'confirmed'
+        
+#         # Create notification for manager
+#         notification = Notification(
+#             user_id=order.created_by,  # Notify the manager who created the order
+#             title='Order Confirmed by Supplier',
+#             message=f'Supplier {supplier.name} has confirmed order {order.order_number}',
+#             type='success',
+#             related_type='purchase_order',
+#             related_id=order.id
+#         )
+#         db.session.add(notification)
+        
+#         db.session.commit()
+        
+#         return jsonify({'success': True, 'message': 'Order confirmed successfully'})
+        
+#     except Exception as e:
+#         db.session.rollback()
+#         return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@app.route('/supplier/orders/<int:order_id>/decline', methods=['POST'])
+@login_required
+def supplier_decline_order(order_id):
+    """Supplier declines the order"""
+    if current_user.role != 'supplier':
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    try:
+        supplier = Supplier.query.filter_by(user_id=current_user.id).first()
+        if not supplier:
+            return jsonify({'success': False, 'message': 'Supplier profile not found'})
+        
+        order = PurchaseOrder.query.filter_by(id=order_id, supplier_id=supplier.id).first()
+        if not order:
+            return jsonify({'success': False, 'message': 'Order not found'})
+        
+        data = request.get_json()
+        reason = data.get('reason', 'No reason provided')
+        
+        # Update order status
+        order.status = 'cancelled'
+        
+        # Create notification for manager
+        notification = Notification(
+            user_id=order.created_by,
+            title='Order Declined by Supplier',
+            message=f'Supplier {supplier.name} declined order {order.order_number}. Reason: {reason}',
+            type='error',
+            related_type='purchase_order',
+            related_id=order.id
+        )
+        db.session.add(notification)
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Order declined successfully'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})     
 
 @app.route('/api/categories')
 @login_required
@@ -1872,19 +2135,58 @@ def manager_suppliers_data():
                     'id': product.id,
                     'name': product.name,
                     'sku': product.sku,
-                    'price': float(product.price),
+                    'selling_price': float(product.price),  # ← Map price to selling_price
+                    'price': float(product.price),          # ← Keep original for compatibility
+                    'quantity': 0,                          # ← Supplier products don't have stock
+                    'reorder_level': 0,                     # ← Default value
                     'description': product.description,
                     'image_url': product.image_url,
                     'unit': product.unit,
                     'category': product.category.name if product.category else 'General'
                 } for product in supplier_products],
-                'products_count': len(supplier_products)
+                'products_count': len(supplier_products),
+                'last_product_added': max([p.created_at for p in supplier_products]).strftime('%Y-%m-%d') if supplier_products else None
             })
         
         return jsonify({'success': True, 'suppliers': suppliers_data})
         
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+    
+
+@app.route('/manager/suppliers/<int:supplier_id>/products')
+@login_required
+def get_supplier_catalog_products(supplier_id):
+    """Get products for a specific supplier"""
+    if current_user.role not in ['admin', 'manager']:
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    try:
+        supplier = Supplier.query.get_or_404(supplier_id)
+        
+        # Get supplier's catalog products
+        supplier_products = SupplierProduct.query.filter_by(supplier_id=supplier_id).all()
+        
+        products_data = []
+        for product in supplier_products:
+            products_data.append({
+                'id': product.id,
+                'name': product.name,
+                'sku': product.sku,
+                'price': float(product.price),
+                'unit': product.unit,
+                'description': product.description,
+                'category': product.category.name if product.category else 'General'
+            })
+        
+        return jsonify({
+            'success': True, 
+            'products': products_data,
+            'supplier_name': supplier.name
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})    
 
 @app.route('/fix-supplier-profiles')
 @login_required
@@ -1990,6 +2292,66 @@ def init_db():
             print("Manager - username: manager, password: manager123")
 
 
+# Add these routes to your app.py
+
+@app.route('/notifications')
+@login_required
+def get_notifications():
+    """Get notifications for current user"""
+    notifications = Notification.query.filter_by(user_id=current_user.id)\
+        .order_by(Notification.created_at.desc())\
+        .limit(50).all()
+    
+    notifications_data = []
+    for notification in notifications:
+        notifications_data.append({
+            'id': notification.id,
+            'title': notification.title,
+            'message': notification.message,
+            'type': notification.type,
+            'is_read': notification.is_read,
+            'created_at': notification.created_at.isoformat(),
+            'related_type': notification.related_type,
+            'related_id': notification.related_id
+        })
+    
+    return jsonify({'success': True, 'notifications': notifications_data})
+
+@app.route('/notifications/<int:notification_id>/read', methods=['POST'])
+@login_required
+def mark_notification_read(notification_id):
+    """Mark notification as read"""
+    try:
+        notification = Notification.query.filter_by(
+            id=notification_id, 
+            user_id=current_user.id
+        ).first()
+        
+        if notification:
+            notification.is_read = True
+            db.session.commit()
+            return jsonify({'success': True, 'message': 'Notification marked as read'})
+        else:
+            return jsonify({'success': False, 'message': 'Notification not found'})
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@app.route('/notifications/read-all', methods=['POST'])
+@login_required
+def mark_all_notifications_read():
+    """Mark all notifications as read"""
+    try:
+        Notification.query.filter_by(user_id=current_user.id, is_read=False)\
+            .update({'is_read': True})
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'All notifications marked as read'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})            
+
+
 @app.route('/fix-suppliers')
 def fix_suppliers():
     """Fix existing supplier users who don't have profiles"""
@@ -2015,9 +2377,27 @@ def fix_suppliers():
     db.session.commit()
     return "Supplier profiles fixed!"
 
+def update_database_schema():
+    """Update database schema to fix issues"""
+    with app.app_context():
+        try:
+            # This will handle the duplicate status field issue
+            db.create_all()
+            print("Database schema updated successfully!")
+            
+            # Check if we need to fix any existing purchase orders
+            orders_with_wrong_status = PurchaseOrder.query.filter(PurchaseOrder.status == 'confirmed').all()
+            for order in orders_with_wrong_status:
+                order.status = 'approved'  # Change to correct status
+            db.session.commit()
+            
+            print(f"Fixed {len(orders_with_wrong_status)} orders with incorrect status")
+            
+        except Exception as e:
+            print(f"Error updating schema: {str(e)}")
+            db.session.rollback()
+
+# Run this once
 if __name__ == '__main__':
-    # Initialize database on first run
-    init_db()
-    
-    # Run the application
+    update_database_schema()
     app.run(debug=True)

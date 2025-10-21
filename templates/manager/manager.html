@@ -124,22 +124,60 @@
     <!-- MAIN CONTENT AREA -->
     <div class="ml-64">
 
-        <!-- Top Header -->
+                       <!-- Top Header -->
         <header class="bg-white shadow-sm sticky top-0 z-30">
             <div class="flex items-center justify-between px-6 py-4">
                 <h1 id="pageTitle" class="text-xl font-semibold text-gray-800">Dashboard</h1>
 
                 <div class="flex items-center space-x-4">
-                    <button class="relative text-gray-600 hover:text-gray-800">
-                        <i class="fas fa-bell text-xl"></i>
-                        {% if low_stock_count > 0 %}
-                        <span
-                            class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{{
-                            low_stock_count }}</span>
-                        {% endif %}
-                    </button>
-                    <div
-                        class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    <!-- Notification Bell -->
+                    <div class="relative">
+                        <button onclick="toggleNotifications()" class="relative text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-bell text-xl"></i>
+                            {% set unread_count = current_user.notifications|selectattr('is_read', 'equalto', false)|list|length %}
+                            {% if unread_count > 0 %}
+                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                                {{ unread_count }}
+                            </span>
+                            {% endif %}
+                        </button>
+                        
+                        <!-- Notifications Dropdown -->
+                        <div id="notificationsDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border">
+                            <div class="p-4 border-b">
+                                <h3 class="font-semibold text-gray-800">Notifications</h3>
+                                <button onclick="markAllNotificationsRead()" class="text-xs text-blue-600 hover:text-blue-800">
+                                    Mark all as read
+                                </button>
+                            </div>
+                            <div class="max-h-96 overflow-y-auto">
+                                {% for notification in current_user.notifications|sort(attribute='created_at', reverse=true) %}
+                                <div class="p-4 border-b {% if not notification.is_read %}bg-blue-50{% endif %}">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <p class="font-medium text-gray-900">{{ notification.title }}</p>
+                                            <p class="text-sm text-gray-600 mt-1">{{ notification.message }}</p>
+                                            <p class="text-xs text-gray-400 mt-2">{{ notification.created_at.strftime('%b %d, %H:%M') }}</p>
+                                        </div>
+                                        {% if not notification.is_read %}
+                                        <button onclick="markNotificationRead('{{ notification.id }}')" class="ml-2 text-blue-600 hover:text-blue-800">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="p-8 text-center text-gray-500">
+                                    <i class="fas fa-bell-slash text-2xl mb-2"></i>
+                                    <p>No notifications</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Avatar -->
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
                         {{ current_user.username[0].upper() }}
                     </div>
                 </div>
@@ -475,6 +513,51 @@ function showSection(sectionName) {
         function showNotification(message, type = 'info') {
             alert(message); // Simple alert for now
         }
+
+    // Notification functions
+function toggleNotifications() {
+    document.getElementById('notificationsDropdown').classList.toggle('hidden');
+}
+
+async function markNotificationRead(notificationId) {
+    try {
+        const response = await fetch(`/notifications/${notificationId}/read`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            location.reload();
+        }
+    } catch (error) {
+        console.error('Error marking notification read:', error);
+    }
+}
+
+// Close notifications when clicking outside
+document.addEventListener('click', function(event) {
+    const notifications = document.getElementById('notificationsDropdown');
+    const bell = event.target.closest('button');
+    
+    if (!bell && !notifications.contains(event.target)) {
+        notifications.classList.add('hidden');
+    }
+});  
+
+// Mark all notifications as read
+async function markAllNotificationsRead() {
+    try {
+        const response = await fetch('/notifications/read-all', {
+            method: 'POST'
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            location.reload();
+        }
+    } catch (error) {
+        console.error('Error marking all notifications read:', error);
+    }
+}
     </script>
 
 </body>
