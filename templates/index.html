@@ -38,6 +38,66 @@
         .scroll-smooth {
             scroll-behavior: smooth;
         }
+        
+        /* Mobile menu styles */
+        .mobile-menu {
+            display: none;
+        }
+        
+        .mobile-menu.active {
+            display: block;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .hero-section {
+                padding-top: 6rem;
+                padding-bottom: 4rem;
+            }
+            
+            .hero-title {
+                font-size: 2.5rem;
+                line-height: 1.2;
+            }
+            
+            .dashboard-preview {
+                margin-top: 2rem;
+                transform: none !important;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .cta-buttons a {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body class="scroll-smooth">
@@ -46,7 +106,7 @@
     <nav class="bg-white shadow-sm fixed w-full top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
-                <!-- Logo -->
+               
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center">
                         <i class="fas fa-chart-line text-white text-xl"></i>
@@ -54,7 +114,7 @@
                     <span class="text-2xl font-bold text-gray-800">Inventra</span>
                 </div>
                 
-                <!-- Navigation Links -->
+                
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="#features" class="text-gray-600 hover:text-orange-600 transition">Features</a>
                     <a href="#benefits" class="text-gray-600 hover:text-orange-600 transition">Benefits</a>
@@ -62,115 +122,120 @@
                     <a href="#contact" class="text-gray-600 hover:text-orange-600 transition">Contact</a>
                 </div>
                 
-                <!-- CTA Buttons -->
-                <div class="flex items-center space-x-4">
+                
+                <div class="hidden md:flex items-center space-x-4">
                     <a href="{{ url_for('login') }}" class="text-orange-600 hover:text-orange-700 font-medium">Login</a>
                     <a href="{{ url_for('login') }}" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium transition">
                         Get Started
                     </a>
                 </div>
 
-                <div class="flex flex-col sm:flex-row gap-4">
-    {% if current_user.is_authenticated %}
-        <a href="{{ url_for('index') }}" class="bg-white text-orange-600 px-8 py-4 rounded-lg font-bold text-lg hover:shadow-xl transition text-center">
-            Go to Dashboard
-        </a>
-        <a href="{{ url_for('logout') }}" class="border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-orange-600 transition text-center">
-            Logout
-        </a>
-    {% else %}
-        <a href="{{ url_for('register') }}" class="bg-white text-orange-600 px-8 py-4 rounded-lg font-bold text-lg hover:shadow-xl transition text-center">
-            Start Free Trial
-        </a>
-        <a href="#demo" class="border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-orange-600 transition text-center">
-            Watch Demo
-        </a>
-    {% endif %}
-</div>
+                
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-gray-600 hover:text-orange-600 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+           
+            <div id="mobile-menu" class="mobile-menu md:hidden py-4 border-t border-gray-200">
+                <div class="flex flex-col space-y-4">
+                    <a href="#features" class="text-gray-600 hover:text-orange-600 transition">Features</a>
+                    <a href="#benefits" class="text-gray-600 hover:text-orange-600 transition">Benefits</a>
+                    <a href="#pricing" class="text-gray-600 hover:text-orange-600 transition">Pricing</a>
+                    <a href="#contact" class="text-gray-600 hover:text-orange-600 transition">Contact</a>
+                    <div class="pt-4 flex flex-col space-y-3">
+                        <a href="{{ url_for('login') }}" class="text-orange-600 hover:text-orange-700 font-medium text-center">Login</a>
+                        <a href="{{ url_for('login') }}" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium transition text-center">
+                            Get Started
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>
 
     <!-- HERO SECTION -->
-    <section class="hero-gradient pt-32 pb-20 px-4 mt-16">
+    <section class="hero-gradient hero-section pt-32 pb-20 px-4 mt-16">
         <div class="max-w-7xl mx-auto">
             <div class="grid md:grid-cols-2 gap-12 items-center">
-                <!-- Left Content -->
+                
                 <div class="text-white animate-fadeInUp">
-                    <h1 class="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+                    <h1 class="hero-title text-4xl md:text-6xl font-bold mb-6 leading-tight">
                         Manage Your Inventory with Confidence
                     </h1>
-                    <p class="text-xl mb-8 text-orange-100">
+                    <p class="text-lg md:text-xl mb-8 text-orange-100">
                         Streamline your inventory management, track sales in real-time, and grow your business with Inventra's powerful yet simple platform.
                     </p>
-                    <div class="flex flex-col sm:flex-row gap-4">
-                        <a href="/register" class="bg-white text-orange-600 px-8 py-4 rounded-lg font-bold text-lg hover:shadow-xl transition text-center">
+                    <div class="cta-buttons flex flex-col sm:flex-row gap-4">
+                        <a href="/register" class="bg-white text-orange-600 px-6 py-3 md:px-8 md:py-4 rounded-lg font-bold text-base md:text-lg hover:shadow-xl transition text-center">
                             Start Free Trial
                         </a>
-                        <a href="#demo" class="border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-orange-600 transition text-center">
+                        <a href="#demo" class="border-2 border-white text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-bold text-base md:text-lg hover:bg-white hover:text-orange-600 transition text-center">
                             Watch Demo
                         </a>
                     </div>
                     
-                    <!-- Stats -->
-                    <div class="grid grid-cols-3 gap-8 mt-12">
+                    
+                    <div class="stats-grid grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8 mt-12">
                         <div>
-                            <div class="text-3xl font-bold">500+</div>
+                            <div class="text-2xl md:text-3xl font-bold">500+</div>
                             <div class="text-orange-100 text-sm">Active Users</div>
                         </div>
                         <div>
-                            <div class="text-3xl font-bold">99.9%</div>
+                            <div class="text-2xl md:text-3xl font-bold">99.9%</div>
                             <div class="text-orange-100 text-sm">Uptime</div>
                         </div>
-                        <div>
-                            <div class="text-3xl font-bold">24/7</div>
+                        <div class="col-span-2 md:col-span-1 text-center md:text-left">
+                            <div class="text-2xl md:text-3xl font-bold">24/7</div>
                             <div class="text-orange-100 text-sm">Support</div>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Right Image/Dashboard Preview -->
-                <div class="hidden md:block">
-                    <div class="bg-white rounded-2xl shadow-2xl p-6 transform rotate-3 hover:rotate-0 transition duration-500">
-                        <div class="bg-gray-100 rounded-lg p-4">
-                            <div class="flex items-center space-x-2 mb-4">
+                <div class="dashboard-preview mt-8 md:mt-0">
+                    <div class="bg-white rounded-xl md:rounded-2xl shadow-lg md:shadow-2xl p-4 md:p-6 transform md:rotate-3 hover:rotate-0 transition duration-500">
+                        <div class="bg-gray-100 rounded-lg p-3 md:p-4">
+                            <div class="flex items-center space-x-2 mb-3 md:mb-4">
                                 <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                                 <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                                 <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                             </div>
-                            <div class="space-y-3">
-                                <div class="bg-white rounded p-4 flex items-center justify-between">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-box text-blue-600 text-xl"></i>
+                            <div class="space-y-2 md:space-y-3">
+                                <div class="bg-white rounded p-3 md:p-4 flex items-center justify-between">
+                                    <div class="flex items-center space-x-2 md:space-x-3">
+                                        <div class="w-8 h-8 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-box text-blue-600 text-base md:text-xl"></i>
                                         </div>
                                         <div>
-                                            <div class="font-semibold">Total Products</div>
-                                            <div class="text-sm text-gray-500">1,234 items</div>
+                                            <div class="font-semibold text-sm md:text-base">Total Products</div>
+                                            <div class="text-xs md:text-sm text-gray-500">1,234 items</div>
                                         </div>
                                     </div>
-                                    <div class="text-2xl font-bold text-green-600">↑ 12%</div>
+                                    <div class="text-lg md:text-2xl font-bold text-green-600">↑ 12%</div>
                                 </div>
-                                <div class="bg-white rounded p-4 flex items-center justify-between">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-dollar-sign text-green-600 text-xl"></i>
+                                <div class="bg-white rounded p-3 md:p-4 flex items-center justify-between">
+                                    <div class="flex items-center space-x-2 md:space-x-3">
+                                        <div class="w-8 h-8 md:w-12 md:h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-dollar-sign text-green-600 text-base md:text-xl"></i>
                                         </div>
                                         <div>
-                                            <div class="font-semibold">Today's Sales</div>
-                                            <div class="text-sm text-gray-500">KES 45,678</div>
+                                            <div class="font-semibold text-sm md:text-base">Today's Sales</div>
+                                            <div class="text-xs md:text-sm text-gray-500">KES 45,678</div>
                                         </div>
                                     </div>
-                                    <div class="text-2xl font-bold text-green-600">↑ 8%</div>
+                                    <div class="text-lg md:text-2xl font-bold text-green-600">↑ 8%</div>
                                 </div>
-                                <div class="bg-white rounded p-4 flex items-center justify-between">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-exclamation-triangle text-orange-600 text-xl"></i>
+                                <div class="bg-white rounded p-3 md:p-4 flex items-center justify-between">
+                                    <div class="flex items-center space-x-2 md:space-x-3">
+                                        <div class="w-8 h-8 md:w-12 md:h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-exclamation-triangle text-orange-600 text-base md:text-xl"></i>
                                         </div>
                                         <div>
-                                            <div class="font-semibold">Low Stock Items</div>
-                                            <div class="text-sm text-gray-500">23 products</div>
+                                            <div class="font-semibold text-sm md:text-base">Low Stock Items</div>
+                                            <div class="text-xs md:text-sm text-gray-500">23 products</div>
                                         </div>
                                     </div>
                                 </div>
@@ -183,21 +248,21 @@
     </section>
 
     <!-- FEATURES SECTION -->
-    <section id="features" class="py-20 bg-gray-50">
+    <section id="features" class="py-16 md:py-20 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-gray-900 mb-4">Powerful Features for Your Business</h2>
-                <p class="text-xl text-gray-600">Everything you need to manage inventory and boost sales</p>
+            <div class="text-center mb-12 md:mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Powerful Features for Your Business</h2>
+                <p class="text-lg md:text-xl text-gray-600">Everything you need to manage inventory and boost sales</p>
             </div>
             
-            <div class="grid md:grid-cols-3 gap-8">
-                <!-- Feature Card 1 -->
-                <div class="feature-card bg-white rounded-xl p-8 shadow-lg">
-                    <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-boxes text-blue-600 text-3xl"></i>
+            <div class="feature-grid grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              
+                <div class="feature-card bg-white rounded-xl p-6 md:p-8 shadow-lg">
+                    <div class="w-12 h-12 md:w-16 md:h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-4 md:mb-6">
+                        <i class="fas fa-boxes text-blue-600 text-2xl md:text-3xl"></i>
                     </div>
-                    <h3 class="text-2xl font-bold mb-4">Inventory Management</h3>
-                    <p class="text-gray-600 mb-4">
+                    <h3 class="text-xl md:text-2xl font-bold mb-3 md:mb-4">Inventory Management</h3>
+                    <p class="text-gray-600 mb-4 text-sm md:text-base">
                         Track stock levels in real-time, set reorder points, and never run out of popular products.
                     </p>
                     <ul class="space-y-2 text-sm text-gray-600">
@@ -207,13 +272,13 @@
                     </ul>
                 </div>
                 
-                <!-- Feature Card 2 -->
-                <div class="feature-card bg-white rounded-xl p-8 shadow-lg">
-                    <div class="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-cash-register text-green-600 text-3xl"></i>
+               
+                <div class="feature-card bg-white rounded-xl p-6 md:p-8 shadow-lg">
+                    <div class="w-12 h-12 md:w-16 md:h-16 bg-green-100 rounded-lg flex items-center justify-center mb-4 md:mb-6">
+                        <i class="fas fa-cash-register text-green-600 text-2xl md:text-3xl"></i>
                     </div>
-                    <h3 class="text-2xl font-bold mb-4">Point of Sale</h3>
-                    <p class="text-gray-600 mb-4">
+                    <h3 class="text-xl md:text-2xl font-bold mb-3 md:mb-4">Point of Sale</h3>
+                    <p class="text-gray-600 mb-4 text-sm md:text-base">
                         Fast and efficient POS system with multiple payment methods and receipt generation.
                     </p>
                     <ul class="space-y-2 text-sm text-gray-600">
@@ -223,13 +288,13 @@
                     </ul>
                 </div>
                 
-                <!-- Feature Card 3 -->
-                <div class="feature-card bg-white rounded-xl p-8 shadow-lg">
-                    <div class="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-chart-line text-purple-600 text-3xl"></i>
+               
+                <div class="feature-card bg-white rounded-xl p-6 md:p-8 shadow-lg">
+                    <div class="w-12 h-12 md:w-16 md:h-16 bg-purple-100 rounded-lg flex items-center justify-center mb-4 md:mb-6">
+                        <i class="fas fa-chart-line text-purple-600 text-2xl md:text-3xl"></i>
                     </div>
-                    <h3 class="text-2xl font-bold mb-4">Analytics & Reports</h3>
-                    <p class="text-gray-600 mb-4">
+                    <h3 class="text-xl md:text-2xl font-bold mb-3 md:mb-4">Analytics & Reports</h3>
+                    <p class="text-gray-600 mb-4 text-sm md:text-base">
                         Get insights into sales trends, top products, and make data-driven decisions.
                     </p>
                     <ul class="space-y-2 text-sm text-gray-600">
@@ -239,13 +304,13 @@
                     </ul>
                 </div>
                 
-                <!-- Feature Card 4 -->
-                <div class="feature-card bg-white rounded-xl p-8 shadow-lg">
-                    <div class="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-truck text-orange-600 text-3xl"></i>
+                
+                <div class="feature-card bg-white rounded-xl p-6 md:p-8 shadow-lg">
+                    <div class="w-12 h-12 md:w-16 md:h-16 bg-orange-100 rounded-lg flex items-center justify-center mb-4 md:mb-6">
+                        <i class="fas fa-truck text-orange-600 text-2xl md:text-3xl"></i>
                     </div>
-                    <h3 class="text-2xl font-bold mb-4">Supplier Management</h3>
-                    <p class="text-gray-600 mb-4">
+                    <h3 class="text-xl md:text-2xl font-bold mb-3 md:mb-4">Supplier Management</h3>
+                    <p class="text-gray-600 mb-4 text-sm md:text-base">
                         Manage supplier relationships, track purchase orders, and streamline procurement.
                     </p>
                     <ul class="space-y-2 text-sm text-gray-600">
@@ -255,13 +320,13 @@
                     </ul>
                 </div>
                 
-                <!-- Feature Card 5 -->
-                <div class="feature-card bg-white rounded-xl p-8 shadow-lg">
-                    <div class="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-users text-red-600 text-3xl"></i>
+                
+                <div class="feature-card bg-white rounded-xl p-6 md:p-8 shadow-lg">
+                    <div class="w-12 h-12 md:w-16 md:h-16 bg-red-100 rounded-lg flex items-center justify-center mb-4 md:mb-6">
+                        <i class="fas fa-users text-red-600 text-2xl md:text-3xl"></i>
                     </div>
-                    <h3 class="text-2xl font-bold mb-4">Multi-User Access</h3>
-                    <p class="text-gray-600 mb-4">
+                    <h3 class="text-xl md:text-2xl font-bold mb-3 md:mb-4">Multi-User Access</h3>
+                    <p class="text-gray-600 mb-4 text-sm md:text-base">
                         Role-based access for admins, managers, cashiers, and suppliers with custom permissions.
                     </p>
                     <ul class="space-y-2 text-sm text-gray-600">
@@ -271,13 +336,13 @@
                     </ul>
                 </div>
                 
-                <!-- Feature Card 6 -->
-                <div class="feature-card bg-white rounded-xl p-8 shadow-lg">
-                    <div class="w-16 h-16 bg-indigo-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-cloud text-indigo-600 text-3xl"></i>
+               
+                <div class="feature-card bg-white rounded-xl p-6 md:p-8 shadow-lg">
+                    <div class="w-12 h-12 md:w-16 md:h-16 bg-indigo-100 rounded-lg flex items-center justify-center mb-4 md:mb-6">
+                        <i class="fas fa-cloud text-indigo-600 text-2xl md:text-3xl"></i>
                     </div>
-                    <h3 class="text-2xl font-bold mb-4">Cloud-Based</h3>
-                    <p class="text-gray-600 mb-4">
+                    <h3 class="text-xl md:text-2xl font-bold mb-3 md:mb-4">Cloud-Based</h3>
+                    <p class="text-gray-600 mb-4 text-sm md:text-base">
                         Access your data anywhere, anytime with secure cloud storage and automatic backups.
                     </p>
                     <ul class="space-y-2 text-sm text-gray-600">
@@ -291,64 +356,56 @@
     </section>
 
     <!-- BENEFITS SECTION -->
-    <section id="benefits" class="py-20 bg-white">
+    <section id="benefits" class="py-16 md:py-20 bg-white">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="grid md:grid-cols-2 gap-12 items-center">
+            <div class="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
                 <div>
-                    <h2 class="text-4xl font-bold text-gray-900 mb-6">Why Choose Inventra?</h2>
+                    <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Why Choose Inventra?</h2>
                     <div class="space-y-6">
                         <div class="flex items-start space-x-4">
-                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-check text-green-600 text-xl"></i>
-                            </div>
+                            
                             <div>
-                                <h3 class="text-xl font-bold mb-2">Save Time & Money</h3>
-                                <p class="text-gray-600">Automate inventory tracking and reduce manual errors, saving you hours every week.</p>
+                                <h3 class="text-lg md:text-xl font-bold mb-2">Save Time & Money</h3>
+                                <p class="text-gray-600 text-sm md:text-base">Automate inventory tracking and reduce manual errors, saving you hours every week.</p>
                             </div>
                         </div>
                         
                         <div class="flex items-start space-x-4">
-                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-chart-bar text-blue-600 text-xl"></i>
-                            </div>
+                            
                             <div>
-                                <h3 class="text-xl font-bold mb-2">Make Better Decisions</h3>
-                                <p class="text-gray-600">Use real-time data and analytics to understand your business and plan for growth.</p>
+                                <h3 class="text-lg md:text-xl font-bold mb-2">Make Better Decisions</h3>
+                                <p class="text-gray-600 text-sm md:text-base">Use real-time data and analytics to understand your business and plan for growth.</p>
                             </div>
                         </div>
                         
                         <div class="flex items-start space-x-4">
-                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-shield-alt text-purple-600 text-xl"></i>
-                            </div>
+                            
                             <div>
-                                <h3 class="text-xl font-bold mb-2">Secure & Reliable</h3>
-                                <p class="text-gray-600">Bank-level security, automatic backups, and 99.9% uptime guarantee.</p>
+                                <h3 class="text-lg md:text-xl font-bold mb-2">Secure & Reliable</h3>
+                                <p class="text-gray-600 text-sm md:text-base">Bank-level security, automatic backups, and 99.9% uptime guarantee.</p>
                             </div>
                         </div>
                         
                         <div class="flex items-start space-x-4">
-                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-headset text-orange-600 text-xl"></i>
-                            </div>
+                            
                             <div>
-                                <h3 class="text-xl font-bold mb-2">24/7 Support</h3>
-                                <p class="text-gray-600">Our dedicated support team is always ready to help you succeed.</p>
+                                <h3 class="text-lg md:text-xl font-bold mb-2">24/7 Support</h3>
+                                <p class="text-gray-600 text-sm md:text-base">Our dedicated support team is always ready to help you succeed.</p>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl p-8 text-white">
-                    <h3 class="text-3xl font-bold mb-6">Start Your Free Trial Today</h3>
-                    <p class="text-xl mb-6 text-orange-100">No credit card required. Get full access for 14 days.</p>
-                    <ul class="space-y-3 mb-8">
+                <div class="bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl p-6 md:p-8 text-white">
+                    <h3 class="text-2xl md:text-3xl font-bold mb-4 md:mb-6">Start Your Free Trial Today</h3>
+                    <p class="text-lg md:text-xl mb-4 md:mb-6 text-orange-100">No credit card required. Get full access for 14 days.</p>
+                    <ul class="space-y-3 mb-6 md:mb-8">
                         <li class="flex items-center"><i class="fas fa-check-circle mr-3"></i>Unlimited products</li>
                         <li class="flex items-center"><i class="fas fa-check-circle mr-3"></i>All features included</li>
                         <li class="flex items-center"><i class="fas fa-check-circle mr-3"></i>No setup fees</li>
                         <li class="flex items-center"><i class="fas fa-check-circle mr-3"></i>Cancel anytime</li>
                     </ul>
-                    <a href="/register" class="block w-full bg-white text-orange-600 text-center px-8 py-4 rounded-lg font-bold text-lg hover:shadow-xl transition">
+                    <a href="/register" class="block w-full bg-white text-orange-600 text-center px-6 py-3 md:px-8 md:py-4 rounded-lg font-bold text-base md:text-lg hover:shadow-xl transition">
                         Start Free Trial →
                     </a>
                 </div>
@@ -357,22 +414,22 @@
     </section>
 
     <!-- PRICING SECTION -->
-    <section id="pricing" class="py-20 bg-gray-50">
+    <section id="pricing" class="py-16 md:py-20 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h2>
-                <p class="text-xl text-gray-600">Choose the plan that fits your business size</p>
+            <div class="text-center mb-12 md:mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h2>
+                <p class="text-lg md:text-xl text-gray-600">Choose the plan that fits your business size</p>
             </div>
             
-            <div class="grid md:grid-cols-3 gap-8">
-                <!-- Starter Plan -->
-                <div class="bg-white rounded-xl p-8 shadow-lg">
-                    <div class="text-center mb-8">
-                        <h3 class="text-2xl font-bold mb-2">Starter</h3>
-                        <div class="text-5xl font-bold text-gray-900 mb-2">Free</div>
+            <div class="pricing-grid grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+               
+                <div class="bg-white rounded-xl p-6 md:p-8 shadow-lg">
+                    <div class="text-center mb-6 md:mb-8">
+                        <h3 class="text-xl md:text-2xl font-bold mb-2">Starter</h3>
+                        <div class="text-4xl md:text-5xl font-bold text-gray-900 mb-2">Free</div>
                         <p class="text-gray-600">Perfect for getting started</p>
                     </div>
-                    <ul class="space-y-4 mb-8">
+                    <ul class="space-y-3 md:space-y-4 mb-6 md:mb-8">
                         <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Up to 100 products</li>
                         <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>1 user account</li>
                         <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Basic reports</li>
@@ -383,17 +440,17 @@
                     </a>
                 </div>
                 
-                <!-- Professional Plan -->
-                <div class="bg-white rounded-xl p-8 shadow-2xl border-4 border-orange-500 relative">
-                    <div class="absolute top-0 right-0 bg-orange-500 text-white px-4 py-1 rounded-bl-lg rounded-tr-lg text-sm font-bold">
+                
+                <div class="bg-white rounded-xl p-6 md:p-8 shadow-2xl border-4 border-orange-500 relative">
+                    <div class="absolute top-0 right-0 bg-orange-500 text-white px-3 py-1 md:px-4 md:py-1 rounded-bl-lg rounded-tr-lg text-xs md:text-sm font-bold">
                         POPULAR
                     </div>
-                    <div class="text-center mb-8">
-                        <h3 class="text-2xl font-bold mb-2">Professional</h3>
-                        <div class="text-5xl font-bold text-gray-900 mb-2">$29<span class="text-2xl text-gray-500">/mo</span></div>
+                    <div class="text-center mb-6 md:mb-8">
+                        <h3 class="text-xl md:text-2xl font-bold mb-2">Professional</h3>
+                        <div class="text-4xl md:text-5xl font-bold text-gray-900 mb-2">$29<span class="text-xl md:text-2xl text-gray-500">/mo</span></div>
                         <p class="text-gray-600">For growing businesses</p>
                     </div>
-                    <ul class="space-y-4 mb-8">
+                    <ul class="space-y-3 md:space-y-4 mb-6 md:mb-8">
                         <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Unlimited products</li>
                         <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>5 user accounts</li>
                         <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Advanced analytics</li>
@@ -405,14 +462,14 @@
                     </a>
                 </div>
                 
-                <!-- Enterprise Plan -->
-                <div class="bg-white rounded-xl p-8 shadow-lg">
-                    <div class="text-center mb-8">
-                        <h3 class="text-2xl font-bold mb-2">Enterprise</h3>
-                        <div class="text-5xl font-bold text-gray-900 mb-2">$99<span class="text-2xl text-gray-500">/mo</span></div>
+               
+                <div class="bg-white rounded-xl p-6 md:p-8 shadow-lg">
+                    <div class="text-center mb-6 md:mb-8">
+                        <h3 class="text-xl md:text-2xl font-bold mb-2">Enterprise</h3>
+                        <div class="text-4xl md:text-5xl font-bold text-gray-900 mb-2">$99<span class="text-xl md:text-2xl text-gray-500">/mo</span></div>
                         <p class="text-gray-600">For large operations</p>
                     </div>
-                    <ul class="space-y-4 mb-8">
+                    <ul class="space-y-3 md:space-y-4 mb-6 md:mb-8">
                         <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Everything in Pro</li>
                         <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Unlimited users</li>
                         <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Custom integrations</li>
@@ -428,15 +485,15 @@
     </section>
 
     <!-- CONTACT SECTION -->
-    <section id="contact" class="py-20 bg-white">
+    <section id="contact" class="py-16 md:py-20 bg-white">
         <div class="max-w-4xl mx-auto px-4 text-center">
-            <h2 class="text-4xl font-bold text-gray-900 mb-6">Ready to Get Started?</h2>
-            <p class="text-xl text-gray-600 mb-8">Join hundreds of businesses already using Inventra</p>
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Ready to Get Started?</h2>
+            <p class="text-lg md:text-xl text-gray-600 mb-8">Join hundreds of businesses already using Inventra</p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="/register" class="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-lg font-bold text-lg transition">
+                <a href="/register" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg font-bold text-base md:text-lg transition">
                     Start Free Trial
                 </a>
-                <a href="/login" class="border-2 border-orange-500 text-orange-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-orange-50 transition">
+                <a href="/login" class="border-2 border-orange-500 text-orange-600 px-6 py-3 md:px-8 md:py-4 rounded-lg font-bold text-base md:text-lg hover:bg-orange-50 transition">
                     Login to Account
                 </a>
             </div>
@@ -446,7 +503,7 @@
     <!-- FOOTER -->
     <footer class="bg-gray-900 text-white py-12">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="grid md:grid-cols-4 gap-8">
+            <div class="footer-grid grid md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <div>
                     <div class="flex items-center space-x-3 mb-4">
                         <div class="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
@@ -454,7 +511,7 @@
                         </div>
                         <span class="text-2xl font-bold">Inventra</span>
                     </div>
-                    <p class="text-gray-400">Smart inventory and sales management for modern businesses.</p>
+                    <p class="text-gray-400 text-sm md:text-base">Smart inventory and sales management for modern businesses.</p>
                 </div>
                 
                 <div>
@@ -490,6 +547,14 @@
             </div>
         </div>
     </footer>
+
+    <script>
+        // Mobile toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('active');
+        });
+    </script>
 
 </body>
 </html>

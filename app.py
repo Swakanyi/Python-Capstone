@@ -24,13 +24,13 @@ db.init_app(app)
 #initiliza Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'  # Redirect to login page if not authenticated
+login_manager.login_view = 'login'  
 login_manager.login_message = 'Please log in to access this page.'
 
 @login_manager.user_loader
 def load_user(user_id):
    
-    #Flask-Login uses this to reload the user object from the user ID stored in the session
+    
     
     return User.query.get(int(user_id))
 
@@ -53,7 +53,7 @@ def index():
         elif current_user.role == 'supplier':
             return redirect(url_for('supplier_dashboard'))
     
-    # If not logged in, show the landing page instead of login
+   
     return redirect(url_for('home'))
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -66,16 +66,16 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        # Find user by username
+      
         user = User.query.filter_by(username=username).first()
         
-        # Check if user exists and password is correct
+        
         if user and user.check_password(password):
             if user.is_active:
                 login_user(user)
                 flash(f'Welcome back, {user.username}!', 'success')
                 
-                # Redirect to appropriate dashboard
+                
                 return redirect(url_for('index'))
             else:
                 flash('Your account has been deactivated. Contact admin.', 'danger')
@@ -97,7 +97,7 @@ def register():
         confirm_password = request.form.get('confirm_password')
         role = request.form.get('role')  
         
-        # Validation
+        
         if password != confirm_password:
             flash('Passwords do not match.', 'warning')
             return redirect(url_for('register'))
@@ -115,9 +115,9 @@ def register():
         new_user.set_password(password)
         
         db.session.add(new_user)
-        db.session.flush()  # This assigns an ID to new_user without committing
+        db.session.flush()  
         
-        # **CRITICAL: Create supplier profile if role is supplier**
+       
         if role == 'supplier':
             supplier = Supplier(
                 name=f"{username}'s Company",
@@ -125,7 +125,7 @@ def register():
                 email=email,
                 phone=None,
                 address=None,
-                user_id=new_user.id,  # Link the supplier to the user
+                user_id=new_user.id,  
                 is_active=True
             )
             db.session.add(supplier)
@@ -133,7 +133,7 @@ def register():
         else:
             flash('Account created successfully! You can now log in.', 'success')
         
-        db.session.commit()  # Commit both user and supplier
+        db.session.commit()  
         
         return redirect(url_for('login'))
     
@@ -170,13 +170,13 @@ def admin_required(f):
 @admin_required
 def admin_dashboard():
     """Admin dashboard - user and system management"""
-    # User statistics
+    
     total_users = User.query.count()
     admin_users_count = User.query.filter_by(role='admin').count()
     active_suppliers_count = Supplier.query.filter_by(is_active=True).count()
     inactive_users_count = User.query.filter_by(is_active=False).count()
     
-    # User roles breakdown
+    
     user_roles = {
         'admins': User.query.filter_by(role='admin').count(),
         'managers': User.query.filter_by(role='manager').count(),
@@ -184,7 +184,7 @@ def admin_dashboard():
         'suppliers': User.query.filter_by(role='supplier').count()
     }
     
-    # Get all users and suppliers for the tables
+    
     users = User.query.all()
     suppliers = Supplier.query.all()
     
@@ -217,7 +217,7 @@ def add_user():
         role = request.form.get('role')
         password = request.form.get('password')
         
-        # Validation
+        
         if not all([username, email, role, password]):
             return jsonify({'success': False, 'message': 'All fields are required'})
         
@@ -227,7 +227,7 @@ def add_user():
         if User.query.filter_by(email=email).first():
             return jsonify({'success': False, 'message': 'Email already registered'})
         
-        # Create new user
+        
         new_user = User(
             username=username,
             email=email,
@@ -253,7 +253,7 @@ def delete_user(user_id):
     try:
         user = User.query.get_or_404(user_id)
         
-        # Prevent admin from deleting themselves
+        
         if user.id == current_user.id:
             return jsonify({'success': False, 'message': 'Cannot delete your own account'})
         
@@ -274,7 +274,7 @@ def toggle_user(user_id):
     try:
         user = User.query.get_or_404(user_id)
         
-        # Prevent admin from deactivating themselves
+        
         if user.id == current_user.id:
             return jsonify({'success': False, 'message': 'Cannot deactivate your own account'})
         
@@ -299,12 +299,12 @@ def edit_user(user_id):
         email = request.form.get('email')
         role = request.form.get('role')
         
-        # Check if username is taken by another user
+        
         existing_user = User.query.filter_by(username=username).first()
         if existing_user and existing_user.id != user_id:
             return jsonify({'success': False, 'message': 'Username already taken'})
         
-        # Check if email is taken by another user
+       
         existing_email = User.query.filter_by(email=email).first()
         if existing_email and existing_email.id != user_id:
             return jsonify({'success': False, 'message': 'Email already registered'})
@@ -341,14 +341,14 @@ def add_supplier():
         phone = request.form.get('phone')
         address = request.form.get('address')
         
-        # Validation
+       
         if not all([name, email]):
             return jsonify({'success': False, 'message': 'Name and email are required'})
         
         if Supplier.query.filter_by(email=email).first():
             return jsonify({'success': False, 'message': 'Supplier with this email already exists'})
         
-        # Create new supplier
+        
         supplier = Supplier(
             name=name,
             contact_person=contact_person,
@@ -375,25 +375,25 @@ def delete_supplier(supplier_id):
     try:
         supplier = Supplier.query.get_or_404(supplier_id)
         
-        # Get product count for confirmation message
+        
         product_count = len(supplier.products)
         
-        # Delete all associated products first
+        
         for product in supplier.products:
-            # Also delete any sale items associated with these products
+            
             sale_items = SaleItem.query.filter_by(product_id=product.id).all()
             for sale_item in sale_items:
                 db.session.delete(sale_item)
             
-            # Delete stock movements for these products
+           
             stock_movements = StockMovement.query.filter_by(product_id=product.id).all()
             for movement in stock_movements:
                 db.session.delete(movement)
             
-            # Delete the product itself
+           
             db.session.delete(product)
         
-        # Then delete the supplier
+        
         db.session.delete(supplier)
         db.session.commit()
         
@@ -437,7 +437,7 @@ def edit_supplier(supplier_id):
         phone = request.form.get('phone')
         address = request.form.get('address')
         
-        # Check if email is taken by another supplier
+        
         existing_supplier = Supplier.query.filter_by(email=email).first()
         if existing_supplier and existing_supplier.id != supplier_id:
             return jsonify({'success': False, 'message': 'Email already registered to another supplier'})
@@ -496,7 +496,7 @@ def update_supplier_route():
         
         supplier = Supplier.query.get_or_404(supplier_id)
         
-        # Check if email is taken by another supplier
+        
         existing_supplier = Supplier.query.filter_by(email=email).first()
         if existing_supplier and existing_supplier.id != supplier.id:
             return jsonify({'success': False, 'message': 'Email already registered to another supplier'})
@@ -523,14 +523,14 @@ def update_supplier_route():
 @admin_required
 def admin_reports():
     """Dedicated reports page"""
-    # Calculate report data
+    
     today_sales = Sale.query.filter(db.func.date(Sale.sale_date) == date.today()).all()
     total_revenue = sum(sale.total_amount for sale in today_sales)
     
-    # Low stock products
+   
     low_stock_products = Product.query.filter(Product.quantity <= Product.reorder_level).all()
     
-    # Top selling products (last 30 days)
+    
     thirty_days_ago = datetime.utcnow() - timedelta(days=30)
     top_products = db.session.query(
         Product.name,
@@ -558,7 +558,7 @@ def get_reports_data():
         today_sales = Sale.query.filter(db.func.date(Sale.sale_date) == date.today()).all()
         today_revenue = sum(sale.total_amount for sale in today_sales)
         
-        # Sales trend (last 7 days)
+        
         sales_trend = []
         labels = []
         for i in range(6, -1, -1):
@@ -568,7 +568,7 @@ def get_reports_data():
             sales_trend.append(float(day_revenue))
             labels.append(day.strftime('%a'))
         
-        # Top products (last 30 days)
+        
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
         top_products = db.session.query(
             Product.name,
@@ -577,20 +577,20 @@ def get_reports_data():
             Sale.sale_date >= thirty_days_ago
         ).group_by(Product.id).order_by(db.desc('quantity_sold')).limit(5).all()
         
-        # Low stock items
+       
         low_stock_items = Product.query.filter(Product.quantity <= Product.reorder_level).all()
         
-        # Inventory value
+        
         products = Product.query.all()
         total_inventory_value = sum(product.cost_price * product.quantity for product in products)
         
-        # Active users
+        
         active_users = User.query.filter_by(is_active=True).count()
         
-        # Financial data (simplified)
+        
         gross_revenue = Sale.query.with_entities(db.func.sum(Sale.total_amount)).scalar() or 0
-        net_profit = gross_revenue * 0.7  # Simplified calculation
-        profit_margin = 70  # Simplified
+        net_profit = gross_revenue * 0.7  
+        profit_margin = 70  
         
         return jsonify({
             'success': True,
@@ -636,12 +636,11 @@ def admin_settings():
 def update_settings():
     """Update system settings - admin only"""
     try:
-        # Example settings - you can expand this
+       
         allow_registration = request.form.get('allow_registration') == 'true'
         allow_admin_creation = request.form.get('allow_admin_creation') == 'true'
         
-        # Here you would save these to your configuration system
-        # For now, we'll just return success
+        
         return jsonify({'success': True, 'message': 'Settings updated successfully'})
         
     except Exception as e:
@@ -652,8 +651,7 @@ def update_settings():
 @admin_required
 def audit_logs():
     """Audit logs - admin only"""
-    # Get recent activities (you'll need to implement an AuditLog model)
-    # For now, return basic template
+    
     return render_template('admin/audit.html')
 
 @app.route('/admin/backup')
@@ -669,8 +667,7 @@ def backup_system():
 def create_backup():
     """Create system backup - admin only"""
     try:
-        # Backup logic would go here
-        # This is a placeholder for actual backup implementation
+        
         backup_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         return jsonify({
             'success': True, 
@@ -692,7 +689,7 @@ def cashier_dashboard():
         flash('Access denied. Cashier only.', 'danger')
         return redirect(url_for('index'))
     
-    # Get today's sales for stats
+    
     today_sales = Sale.query.filter(
         Sale.cashier_id == current_user.id,
         db.func.date(Sale.sale_date) == date.today()
@@ -717,7 +714,7 @@ def search_products():
     if len(query) < 2:
         return jsonify({'products': []})
     
-    # Search in name, SKU, or description
+    
     products = Product.query.filter(
         db.or_(
             Product.name.ilike(f'%{query}%'),
@@ -756,10 +753,10 @@ def process_sale():
         if not items:
             return jsonify({'success': False, 'message': 'No items in cart'})
         
-        # Calculate total
+       
         total_amount = sum(item['price'] * item['quantity'] for item in items)
         
-        # Generate sale number
+        
         sale_number = f"SALE-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}"
         
         # Create sale
@@ -773,9 +770,9 @@ def process_sale():
         )
         
         db.session.add(sale)
-        db.session.flush()  # Get sale ID without committing
+        db.session.flush()  
         
-        # Create sale items and update stock
+        
         for item_data in items:
             product = Product.query.get(item_data['id'])
             if not product:
@@ -812,7 +809,7 @@ def process_sale():
         
         db.session.commit()
         
-        # Return sale data for receipt
+       
         sale_data = {
             'id': sale.id,
             'sale_number': sale.sale_number,
@@ -929,7 +926,7 @@ def manager_dashboard():
         flash('Access denied. Manager only.', 'danger')
         return redirect(url_for('index'))
     
-    # Inventory statistics
+    
     total_products = Product.query.count()
     total_categories = Category.query.count()
     total_suppliers = Supplier.query.count()
@@ -940,7 +937,7 @@ def manager_dashboard():
     ).all()
     out_of_stock_products = Product.query.filter(Product.quantity == 0).all()
     
-    # Calculate inventory value
+    #inventory value
     products = Product.query.all()
     total_stock_value = sum(product.cost_price * product.quantity for product in products)
     average_stock_level = sum(product.quantity for product in products) / len(products) if products else 0
@@ -948,7 +945,7 @@ def manager_dashboard():
     # Recent stock movements (last 10)
     recent_movements = StockMovement.query.order_by(StockMovement.timestamp.desc()).limit(10).all()
     
-    # Today's sales (if you have sales data)
+    
     from datetime import datetime, date
     today_sales = Sale.query.filter(db.func.date(Sale.sale_date) == date.today()).all()
     today_sales_total = sum(sale.total_amount for sale in today_sales)
@@ -993,7 +990,7 @@ def add_product():
         return jsonify({'success': False, 'message': 'Access denied'}), 403
     
     try:
-        # Get form data
+        
         name = request.form.get('name')
         sku = request.form.get('sku')
         description = request.form.get('description')
@@ -1004,7 +1001,7 @@ def add_product():
         category_id = int(request.form.get('category_id'))
         supplier_id = int(request.form.get('supplier_id'))
         
-        # Validation
+        
         if not all([name, sku]):
             return jsonify({'success': False, 'message': 'Name and SKU are required'})
         
@@ -1014,7 +1011,7 @@ def add_product():
         if selling_price < cost_price:
             return jsonify({'success': False, 'message': 'Selling price must be greater than cost price'})
         
-        # Create new product
+        
         product = Product(
             name=name,
             sku=sku,
@@ -1030,7 +1027,7 @@ def add_product():
         db.session.add(product)
         db.session.commit()
         
-        # Record stock movement
+        
         if quantity > 0:
             movement = StockMovement(
                 product_id=product.id,
