@@ -429,26 +429,75 @@
             openProductModal(productId);
         }
 
-        async function deleteProduct(productId) {
-            if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
-            
-            try {
-                const response = await fetch(`/manager/products/delete/${productId}`, {
-                    method: 'POST'
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert('Product deleted successfully!');
-                    location.reload();
-                } else {
-                    alert('Error: ' + result.message);
-                }
-            } catch (error) {
-                alert('Error deleting product: ' + error);
-            }
+        // Update the deleteProduct function in your products.html
+async function deleteProduct(productId) {
+    try {
+        // Get product details from the server instead of DOM
+        const response = await fetch(`/manager/products/${productId}/details`);
+        const productData = await response.json();
+        
+        if (!productData.success) {
+            alert('Error: Could not fetch product details');
+            return;
         }
+        
+        const productName = productData.product.name;
+        const isActive = productData.product.is_active;
+        
+        let message = `Are you sure you want to delete ${productName}?`;
+        
+        if (isActive) {
+            message = `Cannot delete active products. Please deactivate "${productName}" first before deleting.`;
+            alert(message);
+            return;
+        }
+        
+        message = `Are you sure you want to permanently delete the inactive product "${productName}"? This action cannot be undone.`;
+        
+        if (!confirm(message)) return;
+        
+        // Delete the product
+        const deleteResponse = await fetch(`/manager/products/delete/${productId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }
+        });
+        
+        const result = await deleteResponse.json();
+        
+        if (result.success) {
+            alert('Product deleted successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        alert('Error deleting product: ' + error);
+    }
+}
+
+// Add this function to toggle product status
+async function toggleProductStatus(productId) {
+    if (!confirm('Are you sure you want to change this product\'s status?')) return;
+    
+    try {
+        const response = await fetch(`/manager/products/toggle/${productId}`, {
+            method: 'POST'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(result.message);
+            location.reload();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        alert('Error updating product status: ' + error);
+    }
+}
 
         // Close modals on outside click
         window.onclick = function(event) {

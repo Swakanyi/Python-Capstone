@@ -1107,18 +1107,91 @@ def delete_product(product_id):
     try:
         product = Product.query.get_or_404(product_id)
         
-        # Check if product has sales history
-        if product.sale_items:
-            return jsonify({'success': False, 'message': 'Cannot delete product with sales history'})
-        
-        db.session.delete(product)
-        db.session.commit()
-        
-        return jsonify({'success': True, 'message': 'Product deleted successfully'})
+        # Allow deletion if product is inactive, regardless of sales history
+        if not product.is_active:
+            # Delete associated records first
+            # Delete sale items
+            SaleItem.query.filter_by(product_id=product_id).delete()
+            
+            # Delete stock movements
+            StockMovement.query.filter_by(product_id=product_id).delete()
+            
+            # Now delete the product
+            db.session.delete(product)
+            db.session.commit()
+            
+            return jsonify({'success': True, 'message': 'Inactive product deleted successfully'})
+        else:
+            # For active products, keep the existing restrictions
+            if product.sale_items:
+                sale_count = len(product.sale_items)
+                return jsonify({
+                    'success': False, 
+                    'message': f'Cannot delete active product with {sale_count} sales records. Deactivate it first.'
+                })
+            
+            if product.stock_movements:
+                movement_count = len(product.stock_movements)
+                return jsonify({
+                    'success': False, 
+                    'message': f'Cannot delete active product with {movement_count} stock movements. Deactivate it first.'
+                })
+            
+            db.session.delete(product)
+            db.session.commit()
+            return jsonify({'success': True, 'message': 'Product deleted successfully'})
         
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+    
+
+@app.route('/manager/products/<int:product_id>/details')
+@login_required
+def get_product_details(product_id):
+    """Get product details for deletion confirmation"""
+    if current_user.role not in ['admin', 'manager']:
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    try:
+        product = Product.query.get_or_404(product_id)
+        
+        return jsonify({
+            'success': True,
+            'product': {
+                'id': product.id,
+                'name': product.name,
+                'is_active': product.is_active,
+                'sku': product.sku
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})    
+    
+@app.route('/manager/products/toggle/<int:product_id>', methods=['POST'])
+@login_required
+def toggle_product(product_id):
+    """Toggle product active status - manager only"""
+    if current_user.role not in ['admin', 'manager']:
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    try:
+        product = Product.query.get_or_404(product_id)
+        product.is_active = not product.is_active
+        
+        db.session.commit()
+        
+        status = "activated" if product.is_active else "deactivated"
+        return jsonify({
+            'success': True, 
+            'message': f'Product {status} successfully',
+            'is_active': product.is_active
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})   
 
 @app.route('/manager/products/stock/<int:product_id>', methods=['POST'])
 @login_required
