@@ -85,7 +85,7 @@
         </header>
 
         <main class="p-6">
-            <!-- Header with Add Button -->
+            
             <div class="flex justify-between items-center mb-6">
                 <div>
                     <h2 class="text-2xl font-bold text-gray-800">Product Categories</h2>
@@ -96,7 +96,7 @@
                 </button>
             </div>
 
-            <!-- Categories Grid -->
+           
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for category in categories %}
                 <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition">
@@ -171,7 +171,7 @@
         </div>
     </div>
 
-    <!-- JavaScript -->
+   
     <script>
     let currentCategoryId = null;
 
@@ -182,8 +182,7 @@
         if (categoryId) {
             document.getElementById('categoryModalTitle').textContent = 'Edit Category';
             document.getElementById('categorySubmitBtn').textContent = 'Update Category';
-            // In real app, you'd fetch category data here
-        } else {
+            
             document.getElementById('categoryModalTitle').textContent = 'Add New Category';
             document.getElementById('categorySubmitBtn').textContent = 'Save Category';
             document.getElementById('categoryForm').reset();
@@ -197,7 +196,7 @@
         currentCategoryId = null;
     }
 
-    // CRUD Operations
+    
     async function saveCategory(event) {
         event.preventDefault();
         const formData = new FormData(event.target);
@@ -234,8 +233,7 @@
     }
 
     function editCategory(categoryId) {
-        // For now, just open the modal
-        // In real implementation, fetch category data first
+        
         openCategoryModal(categoryId);
     }
 
@@ -260,7 +258,7 @@
         }
     }
 
-    // Close modal on outside click
+    
     window.onclick = function(event) {
         const modal = document.getElementById('categoryModal');
         if (event.target === modal) closeCategoryModal();

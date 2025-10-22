@@ -308,7 +308,7 @@
             if (productId) {
                 document.getElementById('productModalTitle').textContent = 'Edit Product';
                 document.getElementById('productSubmitBtn').textContent = 'Update Product';
-                // In real implementation, you'd fetch product data and populate the form
+               
             } else {
                 document.getElementById('productModalTitle').textContent = 'Add New Product';
                 document.getElementById('productSubmitBtn').textContent = 'Save Product';
@@ -424,15 +424,14 @@
 }
 
         function editProduct(productId) {
-            // For now, just open the modal
-            // In real implementation, you'd fetch product data first
+            
             openProductModal(productId);
         }
 
-        // Update the deleteProduct function in your products.html
+       
 async function deleteProduct(productId) {
     try {
-        // Get product details from the server instead of DOM
+        
         const response = await fetch(`/manager/products/${productId}/details`);
         const productData = await response.json();
         

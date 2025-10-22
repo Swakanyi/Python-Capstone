@@ -1328,7 +1328,7 @@ function updateNotificationBadge() {
         if (badge) {
             badge.textContent = unreadCount;
         } else {
-            // Create badge if it doesn't exist
+            
             const bell = document.querySelector('button[onclick="toggleNotifications()"]');
             const newBadge = document.createElement('span');
             newBadge.className = 'absolute -top-1 -right-1 bg-orange-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center';
@@ -1336,7 +1336,7 @@ function updateNotificationBadge() {
             bell.appendChild(newBadge);
         }
     } else {
-        // Remove badge if no unread notifications
+        
         if (badge) {
             badge.remove();
         }

@@ -1334,7 +1334,7 @@ def delete_category(category_id):
     try:
         category = Category.query.get_or_404(category_id)
         
-        # Check if category has products
+        
         if category.products:
             return jsonify({
                 'success': False, 
@@ -1427,7 +1427,7 @@ def add_purchase_order():
         
         db.session.add(purchase_order)
         
-        # Create notification for supplier if they have a user account
+        
         if supplier.user_id:
             notification = Notification(
                 user_id=supplier.user_id,
@@ -1728,16 +1728,16 @@ def supplier_confirm_order(order_id):
         if not order:
             return jsonify({'success': False, 'message': 'Order not found'})
         
-        # FIXED: Check if order is pending (not approved)
+        
         if order.status != 'pending':
             return jsonify({'success': False, 'message': 'Order is not in pending status'})
         
-        # Update order status to approved (supplier accepts)
+        
         order.status = 'approved'
         
-        # Create notification for manager
+        
         notification = Notification(
-            user_id=order.created_by,  # Notify the manager who created the order
+            user_id=order.created_by,  
             title='Order Accepted by Supplier',
             message=f'Supplier {supplier.name} has accepted purchase order #{order.order_number}',
             type='success',
@@ -2231,10 +2231,10 @@ def manager_suppliers_data():
                     'id': product.id,
                     'name': product.name,
                     'sku': product.sku,
-                    'selling_price': float(product.price),  # ← Map price to selling_price
-                    'price': float(product.price),          # ← Keep original for compatibility
-                    'quantity': 0,                          # ← Supplier products don't have stock
-                    'reorder_level': 0,                     # ← Default value
+                    'selling_price': float(product.price),  
+                    'price': float(product.price),          
+                    'quantity': 0,                          
+                    'reorder_level': 0,                     
                     'description': product.description,
                     'image_url': product.image_url,
                     'unit': product.unit,
@@ -2297,10 +2297,10 @@ def fix_supplier_profiles():
     fixed_count = 0
     
     for user in supplier_users:
-        # Check if supplier profile exists
+        
         supplier = Supplier.query.filter_by(user_id=user.id).first()
         if not supplier:
-            # Create missing supplier profile
+            
             supplier = Supplier(
                 name=f"{user.username}'s Company",
                 contact_person=user.username,
@@ -2388,7 +2388,7 @@ def init_db():
             print("Manager - username: manager, password: manager123")
 
 
-# Add these routes to your app.py
+
 
 @app.route('/notifications')
 @login_required
@@ -2477,14 +2477,14 @@ def update_database_schema():
     """Update database schema to fix issues"""
     with app.app_context():
         try:
-            # This will handle the duplicate status field issue
+            
             db.create_all()
             print("Database schema updated successfully!")
             
-            # Check if we need to fix any existing purchase orders
+            
             orders_with_wrong_status = PurchaseOrder.query.filter(PurchaseOrder.status == 'confirmed').all()
             for order in orders_with_wrong_status:
-                order.status = 'approved'  # Change to correct status
+                order.status = 'approved'  
             db.session.commit()
             
             print(f"Fixed {len(orders_with_wrong_status)} orders with incorrect status")
@@ -2493,7 +2493,7 @@ def update_database_schema():
             print(f"Error updating schema: {str(e)}")
             db.session.rollback()
 
-# Run this once
+
 if __name__ == '__main__':
     update_database_schema()
     app.run(debug=True)
